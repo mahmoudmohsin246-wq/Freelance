@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "585624770214",
+    "project_id": "sports-academy-app-cb958",
+    "storage_bucket": "sports-academy-app-cb958.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:585624770214:android:fc24ab2256da8e88a44667",
+        "android_client_info": {
+          "package_name": "com.sportsacademy.sports_academy_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbEm-LE9lyUPKa36GtEIG1XccO0wRJSSs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

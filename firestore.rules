@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    function isStaff() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee');
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+
+      // A user may create their own profile at registration. Academy type
+      // is Football-only app-wide, enforced here too (not just hidden in
+      // the UI).
+      allow create: if (isOwner(userId) || isAdmin())
+        && request.resource.data.sport == 'sportFootball';
+
+      // A user may update their own profile, but can NEVER change their
+      // own role — that would let a normal user grant themselves
+      // Manager/Admin access and, from there, control subscriptions for
+      // everyone. Only an existing Admin may change someone's role.
+      // Academy type must always stay Football.
+      allow update: if isAdmin()
+        || (
+          isOwner(userId)
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.sport == 'sportFootball'
+        );
+
+      allow delete: if isAdmin();
+
+      // Notifications Subcollection
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Subscriptions Collection
+    match /subscriptions/{subscriptionId} {
+      // A user may only read their own subscriptions (or their own
+      // history); any staff member (Manager or Employee) may read
+      // everyone's — this is required so employees can see the players
+      // list and match a scanned QR code to a subscription when taking
+      // attendance. Only an Admin can create or delete a subscription, or
+      // change its financial/duration fields — employees can view players
+      // but never add/edit subscriptions themselves. The one exception is
+      // backfilling a missing 6-digit `attendanceCode` on an old record
+      // (added before this feature existed): any staff member may do that
+      // specific, narrow update, since it's needed just to open the QR/code
+      // dialog from the players list, not to alter the subscription itself.
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (isStaff() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendanceCode']));
+    }
+
+    // Activity Log Collection (Manager/Admin audit trail)
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Attendance Collection — one document per person per day
+    // (doc id: `{personId}_{yyyy-MM-dd}`), covering both employees and
+    // players/trainees via the `personType` field ('employee' | 'player').
+    // Only staff (Manager/Employee) can mark attendance — a person can
+    // never write their own, which would let them fake a check-in. A
+    // person may read their own records to see their own calendar; staff
+    // can read everyone's.
+    match /attendance/{attendanceId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.personId == request.auth.uid);
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // Financial transactions (revenue & expenses). Never shown to normal
+    // users/players — only staff (Manager or Employee) can read or write
+    // this data.
+    match /transactions/{transactionId} {
+      allow read, write: if isStaff();
+    }
+
+    // Attendance code registry — a 6-digit code claimed per document id,
+    // used to guarantee every employee/player code is unique app-wide.
+    // Docs hold no sensitive data (just a timestamp), so any authenticated
+    // user can claim one — this only runs when staff opens someone's QR/code
+    // dialog for the first time.
+    match /attendanceCodes/{code} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // Fallback default rule
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

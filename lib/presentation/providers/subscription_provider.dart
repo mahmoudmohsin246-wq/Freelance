@@ -1,0 +1,448 @@
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_provider.dart';
+import 'financial_provider.dart';
+import 'notification_provider.dart';
+import 'activity_log_provider.dart';
+import '../../core/utils/attendance_code_generator.dart';
+
+class Subscription {
+  final String id;
+  final String userId;
+  final String userEmail;
+  final String playerName;
+  final String sportName;
+  final double price;
+  final double amountPaid;
+  final DateTime startDate;
+  final DateTime endDate;
+  final DateTime expiryDate;
+  final DateTime createdAt;
+  final int durationMonths;
+  final String durationLabel;
+  final String attendanceCode;
+  bool isActive;
+
+  Subscription({
+    required this.id,
+    this.userId = '',
+    this.userEmail = '',
+    this.playerName = '',
+    this.sportName = 'كرة القدم (Football)',
+    double? price,
+    double? amountPaid,
+    required this.startDate,
+    DateTime? endDate,
+    DateTime? expiryDate,
+    DateTime? createdAt,
+    this.durationMonths = 1,
+    this.durationLabel = '1 Month',
+    this.attendanceCode = '',
+    bool? isActive,
+  })  : price = price ?? amountPaid ?? 0.0,
+        amountPaid = amountPaid ?? price ?? 0.0,
+        endDate = endDate ?? expiryDate ?? startDate.add(const Duration(days: 30)),
+        expiryDate = expiryDate ?? endDate ?? startDate.add(const Duration(days: 30)),
+        createdAt = createdAt ?? DateTime.now(),
+        isActive = isActive ?? (DateTime.now().isBefore(expiryDate ?? endDate ?? startDate.add(const Duration(days: 30))));
+
+  String get packageName => sportName;
+  bool get isCurrentlyActive => DateTime.now().isBefore(expiryDate);
+  String get status => isCurrentlyActive ? 'Active' : 'Expired';
+  double get pricePaid => amountPaid;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'userId': userId,
+        'userEmail': userEmail,
+        'playerName': playerName,
+        'sportName': sportName,
+        'price': price,
+        'amountPaid': amountPaid,
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+        'expiryDate': expiryDate.toIso8601String(),
+        'createdAt': createdAt.toIso8601String(),
+        'durationMonths': durationMonths,
+        'durationLabel': durationLabel,
+        'attendanceCode': attendanceCode,
+        'isActive': isActive,
+      };
+
+  Map<String, dynamic> toFirestore() => {
+        'id': id,
+        'userId': userId,
+        'userEmail': userEmail,
+        'playerName': playerName,
+        'sportName': sportName,
+        'price': price,
+        'amountPaid': amountPaid,
+        'startDate': Timestamp.fromDate(startDate),
+        'endDate': Timestamp.fromDate(endDate),
+        'expiryDate': Timestamp.fromDate(expiryDate),
+        'createdAt': Timestamp.fromDate(createdAt),
+        'durationMonths': durationMonths,
+        'durationLabel': durationLabel,
+        'attendanceCode': attendanceCode,
+        'isActive': isActive,
+      };
+
+  factory Subscription.fromJson(Map<String, dynamic> json) => Subscription(
+        id: json['id'] as String? ?? '',
+        userId: json['userId'] as String? ?? '',
+        userEmail: json['userEmail'] as String? ?? '',
+        playerName: json['playerName'] as String? ?? '',
+        sportName: json['sportName'] as String? ?? 'كرة القدم (Football)',
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        amountPaid: (json['amountPaid'] as num?)?.toDouble() ?? 0.0,
+        startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : DateTime.now(),
+        endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : DateTime.now().add(const Duration(days: 30)),
+        expiryDate: json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : DateTime.now().add(const Duration(days: 30)),
+        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+        durationMonths: json['durationMonths'] as int? ?? 1,
+        durationLabel: json['durationLabel'] as String? ?? '1 Month',
+        attendanceCode: json['attendanceCode'] as String? ?? '',
+        isActive: json['isActive'] as bool?,
+      );
+
+  factory Subscription.fromFirestore(Map<String, dynamic> json, String docId) {
+    DateTime parseDate(dynamic val) {
+      if (val is Timestamp) return val.toDate();
+      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
+      return DateTime.now();
+    }
+
+    final start = parseDate(json['startDate']);
+    final expiry = parseDate(json['expiryDate'] ?? json['endDate']);
+    final created = parseDate(json['createdAt']);
+
+    return Subscription(
+      id: docId,
+      userId: json['userId'] as String? ?? '',
+      userEmail: json['userEmail'] as String? ?? '',
+      playerName: json['playerName'] as String? ?? '',
+      sportName: json['sportName'] as String? ?? 'كرة القدم (Football)',
+      price: (json['price'] as num?)?.toDouble() ?? (json['amountPaid'] as num?)?.toDouble() ?? 0.0,
+      amountPaid: (json['amountPaid'] as num?)?.toDouble() ?? (json['price'] as num?)?.toDouble() ?? 0.0,
+      startDate: start,
+      endDate: expiry,
+      expiryDate: expiry,
+      createdAt: created,
+      durationMonths: json['durationMonths'] as int? ?? 1,
+      durationLabel: json['durationLabel'] as String? ?? '1 Month',
+      attendanceCode: json['attendanceCode'] as String? ?? '',
+      isActive: json['isActive'] as bool?,
+    );
+  }
+}
+
+class SubscriptionProvider extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  List<Subscription> _subscriptions = [];
+  Subscription? _userActiveSubscription;
+  List<Subscription> _userSubscriptionHistory = [];
+  UserModel? _searchedUser;
+  bool _isLoading = false;
+
+  List<Subscription> get subscriptions => _subscriptions;
+  List<Subscription> get activeSubscriptions =>
+      _subscriptions.where((s) => s.isCurrentlyActive).toList();
+  Subscription? get userActiveSubscription => _userActiveSubscription;
+  List<Subscription> get userSubscriptionHistory => _userSubscriptionHistory;
+  UserModel? get searchedUser => _searchedUser;
+  bool get isLoading => _isLoading;
+
+  SubscriptionProvider() {
+    loadSubscriptions();
+  }
+
+  Subscription? get currentSubscription => _userActiveSubscription ?? (_subscriptions.isNotEmpty ? _subscriptions.first : null);
+
+  /// Searches Firestore users by email for Manager subscription assignment.
+  Future<UserModel?> searchUserByEmail(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail.isEmpty) {
+      _searchedUser = null;
+      notifyListeners();
+      return null;
+    }
+    _isLoading = true;
+    _searchedUser = null;
+    notifyListeners();
+
+    try {
+      final snap = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: cleanEmail)
+          .limit(1)
+          .get();
+
+      if (snap.docs.isNotEmpty) {
+        final data = snap.docs.first.data();
+        data['id'] = snap.docs.first.id;
+        _searchedUser = UserModel.fromJson(data);
+      }
+    } catch (e) {
+      debugPrint('Error searching user by email: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+    return _searchedUser;
+  }
+
+  /// Manager creates a subscription for a specific user linked to their Firebase UID.
+  Future<bool> addManagerSubscription({
+    required String userId,
+    required String userEmail,
+    required String userName,
+    required int durationMonths,
+    required String durationLabel,
+    required double amountPaid,
+    DateTime? startDate,
+    String attendanceCode = '',
+    FinancialProvider? financialProvider,
+    ActivityLogProvider? activityLogProvider,
+    UserModel? actingManager,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final start = startDate ?? DateTime.now();
+      final expiry = DateTime(start.year, start.month + durationMonths, start.day);
+      final docRef = _firestore.collection('subscriptions').doc();
+      final code = attendanceCode.trim().isNotEmpty
+          ? attendanceCode.trim()
+          : await AttendanceCodeGenerator.generateUnique(_firestore);
+
+      final newSub = Subscription(
+        id: docRef.id,
+        userId: userId,
+        userEmail: userEmail,
+        playerName: userName,
+        sportName: 'كرة القدم (Football)',
+        price: amountPaid,
+        amountPaid: amountPaid,
+        startDate: start,
+        endDate: expiry,
+        expiryDate: expiry,
+        createdAt: DateTime.now(),
+        durationMonths: durationMonths,
+        durationLabel: durationLabel,
+        attendanceCode: code,
+        isActive: true,
+      );
+
+      await docRef.set(newSub.toFirestore());
+
+      _subscriptions.insert(0, newSub);
+      _userActiveSubscription = newSub;
+      _userSubscriptionHistory.insert(0, newSub);
+
+      if (financialProvider != null) {
+        await financialProvider.addTransaction(
+          title: 'اشتراك: $userName ($durationLabel)',
+          amount: amountPaid,
+          isIncome: true,
+          category: 'اشتراكات',
+        );
+      }
+
+      if (activityLogProvider != null) {
+        await activityLogProvider.logAction(
+          action: 'Subscription created',
+          entityType: 'subscription',
+          details: '$userName ($userEmail) — $durationLabel, $amountPaid EGP',
+          userId: actingManager?.id ?? '',
+          userName: actingManager?.name ?? 'Manager',
+        );
+      }
+
+      await _saveToStorage();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error adding manager subscription: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Loads user subscriptions from Firestore and checks for expiry alerts.
+  Future<void> fetchUserSubscriptions(String userId, {NotificationProvider? notificationProvider}) async {
+    if (userId.trim().isEmpty) return;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final snap = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final list = snap.docs.map((doc) => Subscription.fromFirestore(doc.data(), doc.id)).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      _userSubscriptionHistory = list;
+      final active = list.where((s) => s.isCurrentlyActive).toList();
+      if (active.isNotEmpty) {
+        _userActiveSubscription = active.first;
+      } else if (list.isNotEmpty) {
+        _userActiveSubscription = list.first; // Expired subscription
+        if (notificationProvider != null) {
+          final latest = list.first;
+          await notificationProvider.checkAndCreateExpiryNotification(
+            userId: userId,
+            subscriptionId: latest.id,
+            title: 'انتهاء الاشتراك',
+            message: 'لقد انتهت فترة اشتراكك في الأكاديمية. يرجى التواصل مع الإدارة لتجديد الاشتراك.',
+          );
+        }
+      } else {
+        _userActiveSubscription = null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching user subscriptions: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Quick-add for a walk-in player with no linked account (no search-by-email).
+  /// Still saved to Firestore so it's visible across devices/sessions, just
+  /// without a `userId` — this player won't have login/attendance-calendar
+  /// access until a real account is linked to them later.
+  Future<void> addSubscription({
+    required String playerName,
+    required String sportName,
+    required double price,
+    required int durationInDays,
+    FinancialProvider? financialProvider,
+  }) async {
+    final startDate = DateTime.now();
+    final endDate = startDate.add(Duration(days: durationInDays));
+
+    final docRef = _firestore.collection('subscriptions').doc();
+    final code = await AttendanceCodeGenerator.generateUnique(_firestore);
+    final newSub = Subscription(
+      id: docRef.id,
+      playerName: playerName,
+      sportName: sportName.isEmpty ? 'كرة القدم (Football)' : sportName,
+      price: price,
+      amountPaid: price,
+      startDate: startDate,
+      endDate: endDate,
+      expiryDate: endDate,
+      attendanceCode: code,
+    );
+
+    try {
+      await docRef.set(newSub.toFirestore());
+      _subscriptions.insert(0, newSub);
+      notifyListeners();
+      await _saveToStorage();
+
+      if (financialProvider != null) {
+        await financialProvider.addTransaction(
+          title: 'اشتراك: $playerName ($sportName)',
+          amount: price,
+          isIncome: true,
+          category: 'اشتراكات',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error adding quick subscription: $e');
+    }
+  }
+
+  /// Returns this subscription's 6-digit attendance code, generating and
+  /// persisting one now if it predates this feature (old records won't have
+  /// one yet). If the subscription is linked to a real account, the code is
+  /// shared with (and saved on) that user's profile too.
+  Future<String> ensureSubscriptionAttendanceCode(Subscription sub) async {
+    if (sub.attendanceCode.trim().isNotEmpty) return sub.attendanceCode;
+
+    final code = await AttendanceCodeGenerator.generateUnique(_firestore);
+    await _firestore.collection('subscriptions').doc(sub.id).update({'attendanceCode': code});
+
+    final idx = _subscriptions.indexWhere((s) => s.id == sub.id);
+    if (idx != -1) {
+      _subscriptions[idx] = Subscription(
+        id: sub.id,
+        userId: sub.userId,
+        userEmail: sub.userEmail,
+        playerName: sub.playerName,
+        sportName: sub.sportName,
+        price: sub.price,
+        amountPaid: sub.amountPaid,
+        startDate: sub.startDate,
+        endDate: sub.endDate,
+        expiryDate: sub.expiryDate,
+        createdAt: sub.createdAt,
+        durationMonths: sub.durationMonths,
+        durationLabel: sub.durationLabel,
+        attendanceCode: code,
+        isActive: sub.isActive,
+      );
+      notifyListeners();
+    }
+    return code;
+  }
+
+  Future<void> toggleSubscriptionStatus(String id) async {
+    final index = _subscriptions.indexWhere((s) => s.id == id);
+    if (index != -1) {
+      _subscriptions[index].isActive = !_subscriptions[index].isActive;
+      notifyListeners();
+      await _saveToStorage();
+    }
+  }
+
+  Future<void> _saveToStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String encodedData = json.encode(
+      _subscriptions.map((s) => s.toJson()).toList(),
+    );
+    await prefs.setString('app_subscriptions', encodedData);
+  }
+
+  /// Loads every subscription from Firestore (the source of truth) so the
+  /// manager's players list reflects reality across devices/sessions,
+  /// instead of relying on a per-device local cache.
+  Future<void> loadSubscriptions() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final snap = await _firestore.collection('subscriptions').get();
+      final list = snap.docs.map((doc) => Subscription.fromFirestore(doc.data(), doc.id)).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _subscriptions = list;
+    } catch (e) {
+      debugPrint('Error loading subscriptions from Firestore: $e');
+      // Fall back to whatever was last cached locally, if anything, so the
+      // manager isn't left with a completely empty screen on a network
+      // error — this is best-effort only, not the source of truth.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String? encodedData = prefs.getString('app_subscriptions');
+        if (encodedData != null) {
+          final List<dynamic> decodedData = json.decode(encodedData);
+          _subscriptions = decodedData.map((item) => Subscription.fromJson(item)).toList();
+        }
+      } catch (_) {}
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void fetchSubscriptionData(String academyId) {}
+}
