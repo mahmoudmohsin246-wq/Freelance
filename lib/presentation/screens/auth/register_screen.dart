@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../providers/invitations_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -96,10 +95,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authProv = Provider.of<AuthProvider>(context, listen: false);
-    final invitationsProv = Provider.of<InvitationsProvider>(context, listen: false);
-
-    final invite = invitationsProv.findInvitationFor(_emailController.text.trim());
-    final effectiveRole = invite?.role ?? _roleChoice;
 
     final success = await authProv.register(
       _nameController.text.trim(),
@@ -109,16 +104,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       academyName: _academyNameController.text.trim(),
       nationalId: _nationalIdController.text.trim(),
       avatarFile: _pickedAvatar,
-      roleChoice: effectiveRole,
+      roleChoice: _roleChoice,
       managerCode: _managerCodeController.text.trim(),
     );
 
     if (!mounted) return;
 
     if (success) {
-      if (invite != null) {
-        await invitationsProv.consumeInvitation(invite.id);
-      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

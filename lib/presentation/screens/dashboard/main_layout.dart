@@ -8,6 +8,8 @@ import '../../providers/theme_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/financial_provider.dart';
+import '../../providers/branches_provider.dart';
+import '../../providers/invitations_provider.dart';
 
 import '../players/players_screen.dart';
 import '../expenses/expenses_screen.dart';
@@ -69,6 +71,13 @@ class _MainLayoutState extends State<MainLayout> {
         }
         if (authProv.isManager) {
           Provider.of<FinancialProvider>(context, listen: false).loadFinancialData();
+        }
+        // Branches are visible to every signed-in user (not just
+        // managers), and subject to the same load-before-auth-is-ready
+        // race as above.
+        Provider.of<BranchesProvider>(context, listen: false).loadBranches();
+        if (authProv.isManager) {
+          Provider.of<InvitationsProvider>(context, listen: false).loadInvitations();
         }
       }
     });
@@ -473,21 +482,6 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                 );
               },
-            ),
-            const SizedBox(height: 12),
-
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: borderColor),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () {
-                setState(() => _selectedIndex = 2);
-                if (!_isWide) Navigator.pop(context);
-              },
-              icon: Icon(Icons.swap_horiz, color: textColor),
-              label: Text(loc.translate('switchWorkspace'), style: TextStyle(color: textColor)),
             ),
             const SizedBox(height: 16),
 

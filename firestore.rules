@@ -91,6 +91,32 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Branches — shared academy data. Any authenticated user can see the
+    // branches list; only an Admin can add/remove one.
+    match /branches/{branchId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Shared app settings (kept for forward-compatibility; not actively
+    // used right now since the contact numbers are hardcoded in the app).
+    match /appSettings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Pending invitations, keyed by the invited email. Any authenticated
+    // user can see the list (the app's own UI shows it read-only to
+    // non-managers); only an Admin can create/cancel one. The one
+    // exception is a newly-registered user reading and then deleting
+    // (consuming) the single invitation matching their own email, right
+    // after signup — see AuthProvider.register().
+    match /invitations/{email} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.token.email == resource.data.email);
+    }
+
     // Financial transactions (revenue & expenses). Never shown to normal
     // users/players — only staff (Manager or Employee) can read or write
     // this data.

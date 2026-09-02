@@ -1,9 +1,8 @@
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class Invitation {
-  final String id;
+  final String id; // = normalized email, so re-inviting the same address just overwrites it
   final String email;
   final String role;
   final DateTime createdAt;
@@ -15,23 +14,25 @@ class Invitation {
     required this.createdAt,
   });
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'role': role,
-        'createdAt': createdAt.toIso8601String(),
-      };
-
-  factory Invitation.fromJson(Map<String, dynamic> json) => Invitation(
-        id: json['id'],
-        email: json['email'],
-        role: json['role'],
-        createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      );
+  factory Invitation.fromFirestore(Map<String, dynamic> json, String id) {
+    final raw = json['createdAt'];
+    return Invitation(
+      id: id,
+      email: json['email'] as String? ?? id,
+      role: json['role'] as String? ?? 'coach',
+      createdAt: raw is Timestamp ? raw.toDate() : DateTime.now(),
+    );
+  }
 }
 
+/// Manager-facing list of pending invitations. Backed by Firestore so it's
+/// visible from any device — matching an invitation to a NEW registrant
+/// (who isn't authenticated yet) happens separately, directly inside
+/// `AuthProvider.register()`, right after their account is created; see the
+/// comment there for why it can't go through this provider.
 class InvitationsProvider extends ChangeNotifier {
-  static const _storageKey = 'app_invitations';
+  static const _collection = 'invitations';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Invitation> _invitations = [];
   bool _isLoading = true;
@@ -40,17 +41,17 @@ class InvitationsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   InvitationsProvider() {
-    _load();
+    loadInvitations();
   }
 
-  Future<void> _load() async {
+  Future<void> loadInvitations() async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final encoded = prefs.getString(_storageKey);
-      if (encoded != null) {
-        final decoded = json.decode(encoded) as List<dynamic>;
-        _invitations = decoded.map((e) => Invitation.fromJson(e)).toList();
-      }
+      final snap = await _firestore.collection(_collection).get();
+      final list = snap.docs.map((d) => Invitation.fromFirestore(d.data(), d.id)).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _invitations = list;
     } catch (e) {
       debugPrint('Error loading invitations: $e');
     } finally {
@@ -59,43 +60,28 @@ class InvitationsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = json.encode(_invitations.map((i) => i.toJson()).toList());
-    await prefs.setString(_storageKey, encoded);
-  }
-
   Future<void> sendInvitation(String email, String role) async {
     final normalizedEmail = email.trim().toLowerCase();
-    _invitations.removeWhere((i) => i.email == normalizedEmail);
-    _invitations.insert(
-      0,
-      Invitation(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        email: normalizedEmail,
-        role: role,
-        createdAt: DateTime.now(),
-      ),
-    );
-    notifyListeners();
-    await _save();
+    if (normalizedEmail.isEmpty) return;
+    try {
+      await _firestore.collection(_collection).doc(normalizedEmail).set({
+        'email': normalizedEmail,
+        'role': role,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      await loadInvitations();
+    } catch (e) {
+      debugPrint('Error sending invitation: $e');
+    }
   }
 
   Future<void> cancelInvitation(String id) async {
+    try {
+      await _firestore.collection(_collection).doc(id).delete();
+    } catch (e) {
+      debugPrint('Error cancelling invitation: $e');
+    }
     _invitations.removeWhere((i) => i.id == id);
     notifyListeners();
-    await _save();
-  }
-
-  Invitation? findInvitationFor(String email) {
-    final normalizedEmail = email.trim().toLowerCase();
-    try {
-      return _invitations.firstWhere((i) => i.email == normalizedEmail);
-    } catch (_) {
-      return null;
-    }
-  }
-  Future<void> consumeInvitation(String id) async {
-    await cancelInvitation(id);
   }
 }

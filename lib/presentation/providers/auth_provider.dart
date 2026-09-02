@@ -331,6 +331,29 @@ class AuthProvider extends ChangeNotifier {
       final user = credential.user!;
       await user.updateDisplayName(name.trim());
 
+      // If a manager invited this email with a specific role, that takes
+      // priority over whatever role the person picked themselves at
+      // signup. This has to happen here (after the account exists, so
+      // `request.auth` is set) rather than before registration, because an
+      // unauthenticated visitor isn't allowed to read the invitations
+      // collection — only a signed-in user reading their own invite is.
+      try {
+        final inviteDoc = await _firestore.collection('invitations').doc(normalizedEmail).get();
+        final invitedRole = inviteDoc.data()?['role'] as String?;
+        if (invitedRole == 'manager') {
+          role = UserRole.admin;
+        } else if (invitedRole == 'employee') {
+          role = UserRole.employee;
+        } else if (invitedRole == 'coach') {
+          role = UserRole.coach;
+        }
+        if (inviteDoc.exists) {
+          await inviteDoc.reference.delete();
+        }
+      } catch (e) {
+        debugPrint('Error checking invitation: $e');
+      }
+
       String avatarUrl = '';
 
       if (avatarFile != null) {

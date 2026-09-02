@@ -1,6 +1,5 @@
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SimpleBranch {
   final String id;
@@ -9,21 +8,24 @@ class SimpleBranch {
 
   SimpleBranch({required this.id, required this.name, this.address = ''});
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
+  Map<String, dynamic> toFirestore() => {
         'name': name,
         'address': address,
+        'createdAt': FieldValue.serverTimestamp(),
       };
 
-  factory SimpleBranch.fromJson(Map<String, dynamic> json) => SimpleBranch(
-        id: json['id'],
-        name: json['name'],
-        address: json['address'] ?? '',
+  factory SimpleBranch.fromFirestore(Map<String, dynamic> json, String id) => SimpleBranch(
+        id: id,
+        name: json['name'] as String? ?? '',
+        address: json['address'] as String? ?? '',
       );
 }
 
+/// Branches are shared academy data (added by the manager, seen by every
+/// employee/player), so this is backed by Firestore, not per-device storage.
 class BranchesProvider extends ChangeNotifier {
-  static const _storageKey = 'app_branches';
+  static const _collection = 'branches';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<SimpleBranch> _branches = [];
   bool _isLoading = false;
@@ -40,12 +42,8 @@ class BranchesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final encoded = prefs.getString(_storageKey);
-      if (encoded != null) {
-        final decoded = json.decode(encoded) as List<dynamic>;
-        _branches = decoded.map((e) => SimpleBranch.fromJson(e)).toList();
-      }
+      final snap = await _firestore.collection(_collection).get();
+      _branches = snap.docs.map((d) => SimpleBranch.fromFirestore(d.data(), d.id)).toList();
     } catch (e) {
       debugPrint('Error loading branches: $e');
     } finally {
@@ -54,26 +52,28 @@ class BranchesProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = json.encode(_branches.map((b) => b.toJson()).toList());
-    await prefs.setString(_storageKey, encoded);
-  }
-
   Future<void> addBranch(String name, {String address = ''}) async {
-    final branch = SimpleBranch(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      address: address,
-    );
-    _branches.insert(0, branch);
-    notifyListeners();
-    await _save();
+    try {
+      final docRef = _firestore.collection(_collection).doc();
+      await docRef.set({
+        'name': name,
+        'address': address,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      _branches.insert(0, SimpleBranch(id: docRef.id, name: name, address: address));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding branch: $e');
+    }
   }
 
   Future<void> deleteBranch(String id) async {
+    try {
+      await _firestore.collection(_collection).doc(id).delete();
+    } catch (e) {
+      debugPrint('Error deleting branch: $e');
+    }
     _branches.removeWhere((b) => b.id == id);
     notifyListeners();
-    await _save();
   }
 }
