@@ -82,11 +82,12 @@ class _StaffAttendanceScannerScreenState extends State<StaffAttendanceScannerScr
 
     final match = authProv.employeeAccounts.where((e) {
       final codeMatch = e.attendanceCode.trim().isNotEmpty && e.attendanceCode.trim() == normalized;
+      final pubUserMatch = e.publicUserId.trim().isNotEmpty && e.publicUserId.trim() == normalized;
       final idMatch = e.id.trim() == normalized;
       final emailMatch = e.email.trim().toLowerCase() == normalizedLower;
       final phoneMatch = e.phone.trim().isNotEmpty && e.phone.trim() == normalized;
       final nameMatch = e.name.trim().isNotEmpty && e.name.trim().toLowerCase() == normalizedLower;
-      return codeMatch || idMatch || emailMatch || phoneMatch || nameMatch;
+      return codeMatch || pubUserMatch || idMatch || emailMatch || phoneMatch || nameMatch;
     }).toList();
 
     if (match.isEmpty) {

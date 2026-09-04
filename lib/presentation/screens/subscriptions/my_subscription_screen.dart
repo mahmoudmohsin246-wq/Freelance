@@ -97,85 +97,111 @@ class MySubscriptionScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 16),
                               
-                              // توليد وعرض الـ QR Code
-                              QrImageView(
-                                data: active.attendanceCode.trim().isNotEmpty
-                                    ? active.attendanceCode.trim()
-                                    : active.id.trim(),
-                                version: QrVersions.auto,
-                                size: 180.0,
-                                eyeStyle: QrEyeStyle(
-                                  eyeShape: QrEyeShape.square,
-                                  color: colors.textColor,
-                                ),
-                                dataModuleStyle: QrDataModuleStyle(
-                                  dataModuleShape: QrDataModuleShape.square,
-                                  color: colors.textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              
-                              Text(
-                                "امسح الرمز أو استخدم الـ ID للتسجيل اليدوي",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colors.subTextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                               FutureBuilder<List<String>>(
+                                 future: Future.wait([
+                                   subProv.ensureSubscriptionAttendanceCode(active),
+                                   subProv.ensurePublicSubscriptionId(active),
+                                 ]),
+                                 builder: (ctx, snap) {
+                                   final attCode = (snap.data != null && snap.data!.isNotEmpty)
+                                       ? snap.data![0]
+                                       : active.attendanceCode;
+                                   final pubSubId = (snap.data != null && snap.data!.length > 1)
+                                       ? snap.data![1]
+                                       : active.publicSubscriptionId;
 
-                        // 2. كارت تفاصيل الاشتراك الحالي
-                        Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: colors.cardBg,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: active.isCurrentlyActive ? Colors.green.withOpacity(0.4) : Colors.redAccent.withOpacity(0.4),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(active.durationLabel,
-                                      style: TextStyle(color: colors.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: (active.isCurrentlyActive ? Colors.green : Colors.redAccent).withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      loc.translate(active.isCurrentlyActive ? 'statusActive' : 'statusExpired'),
-                                      style: TextStyle(
-                                        color: active.isCurrentlyActive ? Colors.green : Colors.redAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 24),
-                              _row(loc.translate('startDateLabel'), dateFmt.format(active.startDate), colors),
-                              const SizedBox(height: 8),
-                              _row(loc.translate('expiryDateLabel'), dateFmt.format(active.expiryDate), colors),
-                              const SizedBox(height: 8),
-                              _row(loc.translate('amountPaidColumnLabel'), active.amountPaid.toStringAsFixed(0), colors),
-                              if (!active.isCurrentlyActive) ...[
-                                const SizedBox(height: 14),
-                                Text(loc.translate('contactAdminToRenewMsg'),
-                                    style: TextStyle(color: colors.subTextColor, fontSize: 12)),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
+                                   return Column(
+                                     children: [
+                                       QrImageView(
+                                         data: attCode.trim().isNotEmpty ? attCode.trim() : active.id.trim(),
+                                         version: QrVersions.auto,
+                                         size: 180.0,
+                                         eyeStyle: QrEyeStyle(
+                                           eyeShape: QrEyeShape.square,
+                                           color: colors.textColor,
+                                         ),
+                                         dataModuleStyle: QrDataModuleStyle(
+                                           dataModuleShape: QrDataModuleShape.square,
+                                           color: colors.textColor,
+                                         ),
+                                       ),
+                                       const SizedBox(height: 12),
+                                       Text(
+                                         "كود الحضور (Attendance Code): $attCode",
+                                         style: TextStyle(
+                                           fontSize: 13,
+                                           fontWeight: FontWeight.bold,
+                                           color: colors.primaryBlue,
+                                         ),
+                                       ),
+                                       if (pubSubId.isNotEmpty) ...[
+                                         const SizedBox(height: 4),
+                                         Text(
+                                           "معرّف الاشتراك (Public Sub ID): $pubSubId",
+                                           style: TextStyle(
+                                             fontSize: 11,
+                                             color: colors.subTextColor,
+                                           ),
+                                         ),
+                                       ],
+                                     ],
+                                   );
+                                 },
+                               ),
+                             ],
+                           ),
+                         ),
+
+                         // 2. كارت تفاصيل الاشتراك الحالي
+                         Container(
+                           padding: const EdgeInsets.all(18),
+                           decoration: BoxDecoration(
+                             color: colors.cardBg,
+                             borderRadius: BorderRadius.circular(14),
+                             border: Border.all(
+                               color: active.isCurrentlyActive ? Colors.green.withValues(alpha: 0.4) : Colors.redAccent.withValues(alpha: 0.4),
+                             ),
+                           ),
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               Row(
+                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                 children: [
+                                   Text(active.durationLabel,
+                                       style: TextStyle(color: colors.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                                   Container(
+                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                     decoration: BoxDecoration(
+                                       color: (active.isCurrentlyActive ? Colors.green : Colors.redAccent).withValues(alpha: 0.15),
+                                       borderRadius: BorderRadius.circular(20),
+                                     ),
+                                     child: Text(
+                                       loc.translate(active.isCurrentlyActive ? 'statusActive' : 'statusExpired'),
+                                       style: TextStyle(
+                                         color: active.isCurrentlyActive ? Colors.green : Colors.redAccent,
+                                         fontWeight: FontWeight.bold,
+                                         fontSize: 12,
+                                       ),
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                               const Divider(height: 24),
+                               _row(loc.translate('startDateLabel'), dateFmt.format(active.startDate), colors),
+                               const SizedBox(height: 8),
+                               _row(loc.translate('expiryDateLabel'), dateFmt.format(active.expiryDate), colors),
+                               const SizedBox(height: 8),
+                               _row(loc.translate('amountPaidColumnLabel'), active.amountPaid.toStringAsFixed(0), colors),
+                               if (!active.isCurrentlyActive) ...[
+                                 const SizedBox(height: 14),
+                                 Text(loc.translate('contactAdminToRenewMsg'),
+                                     style: TextStyle(color: colors.subTextColor, fontSize: 12)),
+                               ],
+                             ],
+                           ),
+                         ),
+                       ],
 
                       const SizedBox(height: 28),
                       Text(loc.translate('subscriptionHistoryTitle'),

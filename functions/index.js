@@ -1,12 +1,5 @@
 /**
- * Cloud Functions - إرسال إيميلات حقيقية عن طريق SendGrid
- * ========================================================
- * المشكلة: Firebase الافتراضي بيبعت من نطاق مشترك (firebaseapp.com)
- * وبيتفلتر/بيترفض من Gmail وغيره.
- *
- * الحل: نولّد رابط إعادة التعيين/التفعيل الحقيقي عن طريق Firebase Admin SDK
- * (admin.auth().generatePasswordResetLink / generateEmailVerificationLink)
- * وبعدين نبعت الإيميل بنفسنا عن طريق SendGrid بدل ما نسيب Firebase تبعته.
+ * Cloud Functions - إرسال إيميلات + رفع صور الحساب بطريقة آمنة
  */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -14,13 +7,16 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
+const { createClient } = require('@supabase/supabase-js');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
-// السيكريتات دي بنحطها من التيرمنال (شرحتلك تحت) - متتكتبش هنا مباشرة أبداً
+// Secret definitions
 const SENDGRID_API_KEY = defineSecret('SENDGRID_API_KEY');
-const SENDER_EMAIL = defineSecret('SENDER_EMAIL'); // الإيميل اللي عملتله Single Sender Verification في SendGrid
+const SENDER_EMAIL = defineSecret('SENDER_EMAIL');
+const SUPABASE_URL = defineSecret('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = defineSecret('SUPABASE_SERVICE_ROLE_KEY');
 
 const APP_NAME = 'أكاديمية رياضية';
 
@@ -67,9 +63,6 @@ async function sendViaSendGrid({ to, subject, html, apiKey, senderEmail }) {
   });
 }
 
-/**
- * يستدعيها التطبيق بدل FirebaseAuth.sendPasswordResetEmail() مباشرة
- */
 exports.sendPasswordResetEmailCustom = onCall(
   { secrets: [SENDGRID_API_KEY, SENDER_EMAIL] },
   async (request) => {
@@ -79,9 +72,7 @@ exports.sendPasswordResetEmailCustom = onCall(
     }
 
     try {
-      // بيتأكد إن الإيميل ده حساب حقيقي (بيرمي user-not-found لو مش موجود)
       await admin.auth().getUserByEmail(email);
-
       const link = await admin.auth().generatePasswordResetLink(email);
 
       await sendViaSendGrid({
@@ -95,7 +86,6 @@ exports.sendPasswordResetEmailCustom = onCall(
       return { success: true };
     } catch (err) {
       if (err.code === 'auth/user-not-found') {
-        // منسيبش المهاجم يعرف إن الإيميل مش موجود
         return { success: true };
       }
       console.error('sendPasswordResetEmailCustom error:', err);
@@ -104,10 +94,6 @@ exports.sendPasswordResetEmailCustom = onCall(
   }
 );
 
-/**
- * يستدعيها التطبيق بدل user.sendEmailVerification() مباشرة
- * لازم المستخدم يكون عامل تسجيل دخول (auth.uid موجود)
- */
 exports.sendVerificationEmailCustom = onCall(
   { secrets: [SENDGRID_API_KEY, SENDER_EMAIL] },
   async (request) => {
@@ -135,6 +121,44 @@ exports.sendVerificationEmailCustom = onCall(
     } catch (err) {
       console.error('sendVerificationEmailCustom error:', err);
       throw new HttpsError('internal', 'genericError');
+    }
+  }
+);
+
+/**
+ * دالة توليد رابط رفع صورة الحساب الشفافة والآمنة لـ Supabase Storage
+ */
+exports.generateAvatarUploadUrl = onCall(
+  { secrets: [SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'يجب تسجيل الدخول أولاً');
+    }
+
+    const uid = request.auth.uid;
+    const filePath = `users/${uid}/avatar.jpg`;
+
+    const supabase = createClient(
+      SUPABASE_URL.value(),
+      SUPABASE_SERVICE_ROLE_KEY.value()
+    );
+
+    try {
+      const { data: uploadData, error } = await supabase
+        .storage
+        .from('avatars')
+        .createSignedUploadUrl(filePath);
+
+      if (error) throw new Error(error.message);
+
+      return {
+        signedUrl: uploadData.signedUrl,
+        path: filePath,
+        baseUrl: SUPABASE_URL.value(),
+      };
+    } catch (err) {
+      console.error('generateAvatarUploadUrl error:', err);
+      throw new HttpsError('internal', err.message);
     }
   }
 );

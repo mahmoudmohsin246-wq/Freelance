@@ -1,38 +1,60 @@
 import 'dart:typed_data';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Profile picture uploads only go through Supabase Storage — everything
-/// else in the app (Auth, Firestore data) stays on Firebase. This keeps the
-/// migration scoped to the one thing that needed Firebase's paid Blaze plan
-/// (Cloud Storage), without touching anything else.
-///
-/// Setup required once, in the Supabase dashboard (no credit card needed):
-/// 1. Create a free project at https://supabase.com.
-/// 2. Storage → Create a new bucket named exactly `avatars`, and mark it
-///    Public (so uploaded pictures are viewable via a plain URL, same as
-///    Firebase Storage download URLs worked before).
-/// 3. Storage → Policies → add a policy on the `avatars` bucket allowing
-///    `INSERT`/`UPDATE` for authenticated users (or `anon` if you'd rather
-///    not require a Supabase-side login — see note in `main.dart`).
+/// Profile picture uploads go through Supabase Storage (`avatars` bucket).
+/// Uses Supabase Edge Function to safely generate signed upload URLs verified against Firebase ID Tokens.
 class SupabaseStorageService {
   static const String _bucket = 'avatars';
 
   static SupabaseClient get _client => Supabase.instance.client;
 
-  /// Uploads [bytes] as `users/{uid}/avatar.png` and returns a public URL,
-  /// mirroring the old `FirebaseStorage` upload + `getDownloadURL()` flow.
+  /// Uploads [bytes] as `users/{uid}/avatar.png` and returns a public URL.
+  /// Strictly checks that [uid] matches the current authenticated Firebase user UID.
   static Future<String> uploadAvatar(String uid, Uint8List bytes) async {
-    final path = 'users/$uid/avatar.png';
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.uid != uid) {
+      throw Exception(
+        'Unauthorized avatar upload: Target UID ($uid) does not match authenticated user UID (${currentUser?.uid})',
+      );
+    }
 
-    await _client.storage.from(_bucket).uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
-        );
+    final idToken = await currentUser.getIdToken();
+    if (idToken == null) {
+      throw Exception('Failed to retrieve Firebase ID Token');
+    }
 
-    // Cache-bust so the app's Image widgets pick up the new picture right
-    // away instead of showing a stale cached copy at the same URL.
+    // 1. استدعاء الـ Edge Function لجلب Signed Upload URL الموثوق بـ Firebase Token
+    final response = await _client.functions.invoke(
+      'generate-avatar-upload-url',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+
+    if (response.status != 200 || response.data == null) {
+      throw Exception('Failed to get signed upload URL: ${response.data}');
+    }
+
+    final String signedUrl = response.data['signedUrl'];
+    final String path = response.data['path'];
+    final String baseUrl = response.data['baseUrl'];
+
+    // 2. رفع البايتات مباشرة إلى Supabase باستخدام الـ Signed URL
+    final uploadUri = Uri.parse('$baseUrl/storage/v1/object/upload/sign/$signedUrl');
+
+    final httpResponse = await http.put(
+      uploadUri,
+      headers: {
+        'Content-Type': 'image/png',
+      },
+      body: bytes,
+    );
+
+    if (httpResponse.statusCode != 200 && httpResponse.statusCode != 201) {
+      throw Exception('Upload failed with status (${httpResponse.statusCode}): ${httpResponse.body}');
+    }
+
+    // 3. جلب الرابط العام وتطبيق الـ Cache Buster
     final publicUrl = _client.storage.from(_bucket).getPublicUrl(path);
     return '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
   }

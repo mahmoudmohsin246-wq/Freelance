@@ -83,6 +83,172 @@ class _MainLayoutState extends State<MainLayout> {
     });
   }
 
+  void _showSendMessageDialog(BuildContext context, NotificationProvider notifProv, AuthProvider authProv) {
+    final loc = AppLocalizations.of(context);
+    final isManager = authProv.isManager;
+    if (!isManager) return;
+
+    final emailCtrl = TextEditingController();
+    final titleCtrl = TextEditingController();
+    final messageCtrl = TextEditingController();
+    bool isBroadcast = false;
+    bool sending = false;
+    String? errorMsg;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: cardBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.send_rounded, color: primaryBlue),
+              const SizedBox(width: 8),
+              Text('إرسال رسالة / إشعار', style: TextStyle(color: textColor, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('مستخدم محدد'),
+                      selected: !isBroadcast,
+                      selectedColor: primaryBlue.withValues(alpha: 0.2),
+                      onSelected: (val) => setDialogState(() => isBroadcast = false),
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('إعلان للجميع'),
+                      selected: isBroadcast,
+                      selectedColor: primaryBlue.withValues(alpha: 0.2),
+                      onSelected: (val) => setDialogState(() => isBroadcast = true),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (!isBroadcast) ...[
+                  TextField(
+                    controller: emailCtrl,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      labelText: 'البريد الإلكتروني للمستلم',
+                      labelStyle: TextStyle(color: subTextColor),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                TextField(
+                  controller: titleCtrl,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'عنوان الرسالة',
+                    labelStyle: TextStyle(color: subTextColor),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: messageCtrl,
+                  maxLines: 3,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'نص الرسالة',
+                    labelStyle: TextStyle(color: subTextColor),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    errorMsg!,
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: sending ? null : () => Navigator.pop(ctx),
+              child: Text(loc.translate('cancel'), style: TextStyle(color: subTextColor)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: primaryBlue),
+              onPressed: sending
+                  ? null
+                  : () async {
+                      if (titleCtrl.text.trim().isEmpty || messageCtrl.text.trim().isEmpty) {
+                        setDialogState(() => errorMsg = 'يرجى كتابة العنوان ونص الرسالة');
+                        return;
+                      }
+                      setDialogState(() {
+                        sending = true;
+                        errorMsg = null;
+                      });
+
+                      final sender = authProv.currentUser;
+                      final senderId = sender?.id ?? '';
+                      final senderName = sender?.name ?? 'الإدارة';
+
+                      try {
+                        if (isBroadcast) {
+                          await authProv.fetchAllUsers();
+                          final userIds = authProv.allUsers.map((u) => u.id).toList();
+                          await notifProv.sendBroadcastNotification(
+                            targetUserIds: userIds,
+                            title: titleCtrl.text.trim(),
+                            message: messageCtrl.text.trim(),
+                            senderId: senderId,
+                            senderName: senderName,
+                          );
+                        } else {
+                          await notifProv.sendNotificationByEmail(
+                            recipientEmail: emailCtrl.text.trim(),
+                            title: titleCtrl.text.trim(),
+                            message: messageCtrl.text.trim(),
+                            senderId: senderId,
+                            senderName: senderName,
+                          );
+                        }
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('تم إرسال الإشعار بنجاح'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        final msg = e.toString();
+                        setDialogState(() {
+                          sending = false;
+                          if (msg.contains('enterValidEmail')) {
+                            errorMsg = 'يرجى إدخال بريد إلكتروني صحيح';
+                          } else if (msg.contains('noAccountWithEmail')) {
+                            errorMsg = 'لا يوجد حساب مسجل بهذا البريد الإلكتروني';
+                          } else {
+                            errorMsg = 'حدث خطأ أثناء الإرسال: $e';
+                          }
+                        });
+                      }
+                    },
+              child: sending
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('إرسال'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showNotificationsSheet(BuildContext context, NotificationProvider notifProv, AuthProvider authProv) {
     final user = authProv.currentUser;
     if (user != null) {
@@ -91,6 +257,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: cardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -99,9 +266,13 @@ class _MainLayoutState extends State<MainLayout> {
         return Consumer<NotificationProvider>(
           builder: (ctx, nProv, _) {
             final list = nProv.notifications;
+            final unread = nProv.unreadCount;
+            final isManager = authProv.isManager;
+
             return SafeArea(
               child: Container(
                 padding: const EdgeInsets.all(16),
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,14 +281,30 @@ class _MainLayoutState extends State<MainLayout> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'الإشعارات (Notifications)',
+                          'الإشعارات والرسائل',
                           style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        if (list.isNotEmpty)
-                          Text('${list.length} إشعار', style: TextStyle(color: subTextColor, fontSize: 12)),
+                        Row(
+                          children: [
+                            if (unread > 0 && user != null)
+                              TextButton(
+                                onPressed: () => nProv.markAllAsRead(user.id),
+                                child: const Text('تحديد الكل كقروء', style: TextStyle(fontSize: 12)),
+                              ),
+                            if (isManager)
+                              IconButton(
+                                icon: Icon(Icons.add_comment_outlined, color: primaryBlue),
+                                tooltip: 'إرسال إشعار للمستخدمين',
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _showSendMessageDialog(context, nProv, authProv);
+                                },
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     if (list.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 30),
@@ -133,33 +320,101 @@ class _MainLayoutState extends State<MainLayout> {
                           separatorBuilder: (_, __) => Divider(color: borderColor),
                           itemBuilder: (ctx, index) {
                             final notif = list[index];
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: notif.isRead
-                                    ? subTextColor.withOpacity(0.15)
-                                    : primaryBlue.withOpacity(0.15),
-                                child: Icon(
-                                  notif.type == 'subscription_expired' ? Icons.warning_amber_rounded : Icons.notifications_none,
-                                  color: notif.type == 'subscription_expired' ? Colors.amber : primaryBlue,
+                            final timeStr = DateFormat('yyyy-MM-dd HH:mm').format(notif.createdAt);
+                            final isBroadcast = notif.type == 'broadcast';
+                            final isReminder = notif.type == 'subscription_reminder' || notif.type == 'subscription_expired';
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: notif.isRead ? Colors.transparent : primaryBlue.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: notif.isRead
+                                      ? subTextColor.withValues(alpha: 0.15)
+                                      : (isBroadcast ? Colors.purple.withValues(alpha: 0.15) : primaryBlue.withValues(alpha: 0.15)),
+                                  child: Icon(
+                                    isReminder
+                                        ? Icons.warning_amber_rounded
+                                        : (isBroadcast ? Icons.campaign_rounded : Icons.mark_email_unread_outlined),
+                                    color: isReminder
+                                        ? Colors.amber
+                                        : (isBroadcast ? Colors.purpleAccent : primaryBlue),
+                                  ),
                                 ),
-                              ),
-                              title: Text(
-                                notif.title.isNotEmpty ? notif.title : 'إشعار من النظام',
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
-                                  fontSize: 14,
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        notif.title.isNotEmpty ? notif.title : 'إشعار من الأكاديمية',
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isBroadcast)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purple.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text('إعلان', style: TextStyle(fontSize: 10, color: Colors.purpleAccent)),
+                                      ),
+                                  ],
                                 ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      notif.message,
+                                      style: TextStyle(color: subTextColor, fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        if (notif.senderName.isNotEmpty)
+                                          Text('من: ${notif.senderName}', style: TextStyle(color: primaryBlue, fontSize: 10)),
+                                        Text(timeStr, style: TextStyle(color: subTextColor, fontSize: 10)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  if (user != null && !notif.isRead) {
+                                    nProv.markAsRead(user.id, notif.id);
+                                  }
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      backgroundColor: cardBg,
+                                      title: Text(notif.title, style: TextStyle(color: textColor)),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(notif.message, style: TextStyle(color: textColor, fontSize: 14)),
+                                          const SizedBox(height: 12),
+                                          Text('التاريخ: $timeStr', style: TextStyle(color: subTextColor, fontSize: 11)),
+                                          if (notif.senderName.isNotEmpty)
+                                            Text('المرسل: ${notif.senderName}', style: TextStyle(color: subTextColor, fontSize: 11)),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text('إغلاق'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                              subtitle: Text(
-                                notif.message,
-                                style: TextStyle(color: subTextColor, fontSize: 12),
-                              ),
-                              onTap: () {
-                                if (user != null && !notif.isRead) {
-                                  nProv.markAsRead(user.id, notif.id);
-                                }
-                              },
                             );
                           },
                         ),

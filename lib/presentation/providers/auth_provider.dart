@@ -22,6 +22,13 @@ class UserModel {
   final bool emailVerified;
   final String nationalId;
   final String attendanceCode;
+  final String publicUserId;
+  // Only meaningful for trainee/player (coach) accounts. When false, the
+  // player's contact info and attendance calendar are hidden from other
+  // players in the players list — managers and employees can always see
+  // them regardless of this flag. Defaults to true (normal/public) so
+  // existing accounts keep their current behavior.
+  final bool isProfilePublic;
 
   UserModel({
     required this.id,
@@ -35,6 +42,8 @@ class UserModel {
     this.emailVerified = false,
     this.nationalId = '',
     this.attendanceCode = '',
+    this.publicUserId = '',
+    this.isProfilePublic = true,
   });
 
   UserModel copyWith({
@@ -46,6 +55,8 @@ class UserModel {
     bool? emailVerified,
     String? nationalId,
     String? attendanceCode,
+    String? publicUserId,
+    bool? isProfilePublic,
   }) {
     return UserModel(
       id: id,
@@ -59,6 +70,8 @@ class UserModel {
       emailVerified: emailVerified ?? this.emailVerified,
       nationalId: nationalId ?? this.nationalId,
       attendanceCode: attendanceCode ?? this.attendanceCode,
+      publicUserId: publicUserId ?? this.publicUserId,
+      isProfilePublic: isProfilePublic ?? this.isProfilePublic,
     );
   }
 
@@ -73,6 +86,8 @@ class UserModel {
         'avatarPath': avatarPath,
         'nationalId': nationalId,
         'attendanceCode': attendanceCode,
+        'publicUserId': publicUserId,
+        'isProfilePublic': isProfilePublic,
       };
 
   factory UserModel.fromJson(Map<String, dynamic> json, {bool emailVerified = false}) => UserModel(
@@ -90,6 +105,8 @@ class UserModel {
         emailVerified: emailVerified,
         nationalId: json['nationalId'] as String? ?? '',
         attendanceCode: json['attendanceCode'] as String? ?? '',
+        publicUserId: json['publicUserId'] as String? ?? '',
+        isProfilePublic: json['isProfilePublic'] as bool? ?? true,
       );
 }
 
@@ -116,6 +133,11 @@ class AuthProvider extends ChangeNotifier {
   bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
 
   bool get isManager => _currentUser?.role == UserRole.admin;
+
+  // "Player" in the app's UI (trainee) maps to UserRole.coach internally.
+  bool get isPlayer => _currentUser?.role == UserRole.coach;
+
+  bool get isProfilePublic => _currentUser?.isProfilePublic ?? true;
 
   bool get canTakeAttendance =>
       _currentUser != null &&
@@ -187,7 +209,7 @@ class AuthProvider extends ChangeNotifier {
   Future<String> ensureAttendanceCode(UserModel user) async {
     if (user.attendanceCode.trim().isNotEmpty) return user.attendanceCode;
 
-    final code = await AttendanceCodeGenerator.generateUnique(_firestore);
+    final code = await AttendanceCodeGenerator.generateUniqueAttendanceCode(_firestore);
     await _firestore.collection(_usersCollection).doc(user.id).update({'attendanceCode': code});
 
     final idx = _academyMembers.indexWhere((m) => m.id == user.id);
@@ -198,12 +220,36 @@ class AuthProvider extends ChangeNotifier {
     return code;
   }
 
+  /// Returns this person's 6-digit Public User ID, generating a unique one if missing.
+  Future<String> ensurePublicUserId(UserModel user) async {
+    if (user.publicUserId.trim().isNotEmpty) return user.publicUserId;
+
+    final code = await AttendanceCodeGenerator.generateUniquePublicUserId(_firestore);
+    await _firestore.collection(_usersCollection).doc(user.id).update({'publicUserId': code});
+
+    final idx = _academyMembers.indexWhere((m) => m.id == user.id);
+    if (idx != -1) _academyMembers[idx] = _academyMembers[idx].copyWith(publicUserId: code);
+    if (_currentUser?.id == user.id) _currentUser = _currentUser!.copyWith(publicUserId: code);
+    notifyListeners();
+
+    return code;
+  }
+
   Future<UserModel?> _fetchProfile(String uid) async {
-    final doc = await _firestore.collection(_usersCollection).doc(uid).get();
-    if (!doc.exists) return null;
-    final data = doc.data()!;
-    data['id'] = uid;
-    return UserModel.fromJson(data, emailVerified: _auth.currentUser?.emailVerified ?? false);
+    try {
+      final doc = await _firestore.collection(_usersCollection).doc(uid).get();
+      if (!doc.exists) return null;
+      final data = doc.data()!;
+      data['id'] = uid;
+      return UserModel.fromJson(data, emailVerified: _auth.currentUser?.emailVerified ?? false);
+    } on FirebaseException catch (e) {
+      // A permission-denied here (for someone other than the signed-in
+      // user's own uid) means the target has set their profile to
+      // private and security rules are blocking the read — treat that
+      // the same as "not available" rather than crashing the caller.
+      debugPrint('Error fetching profile ($uid): ${e.code}');
+      return null;
+    }
   }
 
   Future<void> _loadAcademyMembers(String academyName) async {
@@ -367,6 +413,9 @@ class AuthProvider extends ChangeNotifier {
         }
       }
 
+      final publicUserId = await AttendanceCodeGenerator.generateUniquePublicUserId(_firestore);
+      final attendanceCode = await AttendanceCodeGenerator.generateUniqueAttendanceCode(_firestore);
+
       final profileData = {
         'name': name.trim(),
         'email': normalizedEmail,
@@ -376,6 +425,9 @@ class AuthProvider extends ChangeNotifier {
         'nationalId': nationalId.trim(),
         'sport': 'sportFootball',
         'avatarPath': avatarUrl,
+        'publicUserId': publicUserId,
+        'attendanceCode': attendanceCode,
+        'isProfilePublic': true,
         'createdAt': FieldValue.serverTimestamp(),
       };
       await _firestore.collection(_usersCollection).doc(user.uid).set(profileData);
@@ -504,6 +556,37 @@ class AuthProvider extends ChangeNotifier {
 
     await _loadAcademyMembers(_currentUser!.academyName);
     notifyListeners();
+  }
+
+  /// Lets a trainee/player toggle whether other players can see their
+  /// profile (contact info + attendance) in the players list. Has no
+  /// effect on what a manager or employee can see — they always have
+  /// full access regardless of this setting.
+  Future<bool> updateProfileVisibility(bool isPublic) async {
+    if (_currentUser == null) return false;
+
+    final previous = _currentUser!.isProfilePublic;
+    _currentUser = _currentUser!.copyWith(isProfilePublic: isPublic);
+    notifyListeners();
+
+    try {
+      await _firestore
+          .collection(_usersCollection)
+          .doc(_currentUser!.id)
+          .update({'isProfilePublic': isPublic});
+
+      final idx = _academyMembers.indexWhere((m) => m.id == _currentUser!.id);
+      if (idx != -1) {
+        _academyMembers[idx] = _academyMembers[idx].copyWith(isProfilePublic: isPublic);
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Error updating profile visibility: $e');
+      // Roll back the optimistic local update since the write failed.
+      _currentUser = _currentUser!.copyWith(isProfilePublic: previous);
+      notifyListeners();
+      return false;
+    }
   }
 
   List<UserModel> _allUsers = [];

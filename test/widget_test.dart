@@ -16,6 +16,8 @@ void main() {
         sport: 'sportFootball',
         avatarPath: 'path/to/avatar.jpg',
         emailVerified: true,
+        attendanceCode: '123456',
+        publicUserId: '654321',
       );
 
       expect(user.id, 'uid-123');
@@ -24,6 +26,8 @@ void main() {
       expect(user.role, UserRole.admin);
       expect(user.sport, 'sportFootball');
       expect(user.emailVerified, isTrue);
+      expect(user.attendanceCode, '123456');
+      expect(user.publicUserId, '654321');
     });
 
     test('UserModel toJson and fromJson work properly', () {
@@ -36,6 +40,8 @@ void main() {
         'academyName': 'Star Academy',
         'sport': 'sportFootball',
         'avatarPath': '',
+        'attendanceCode': '111222',
+        'publicUserId': '333444',
       };
 
       final user = UserModel.fromJson(json, emailVerified: false);
@@ -44,17 +50,21 @@ void main() {
       expect(user.role, UserRole.coach);
       expect(user.sport, 'sportFootball');
       expect(user.emailVerified, isFalse);
+      expect(user.attendanceCode, '111222');
+      expect(user.publicUserId, '333444');
 
       final outputJson = user.toJson();
       expect(outputJson['id'], 'uid-456');
       expect(outputJson['name'], 'Coach Smith');
       expect(outputJson['role'], 'coach');
       expect(outputJson['sport'], 'sportFootball');
+      expect(outputJson['attendanceCode'], '111222');
+      expect(outputJson['publicUserId'], '333444');
     });
   });
 
   group('Subscription Model Tests', () {
-    test('Subscription calculates active/expired status correctly', () {
+    test('Subscription calculates active/expired status and handles 6-digit publicSubscriptionId', () {
       final now = DateTime.now();
       final activeSub = Subscription(
         id: 'sub-1',
@@ -64,11 +74,15 @@ void main() {
         startDate: now.subtract(const Duration(days: 5)),
         expiryDate: now.add(const Duration(days: 25)),
         amountPaid: 500.0,
+        attendanceCode: '555666',
+        publicSubscriptionId: '777888',
       );
 
       expect(activeSub.isCurrentlyActive, isTrue);
       expect(activeSub.status, 'Active');
       expect(activeSub.amountPaid, 500.0);
+      expect(activeSub.attendanceCode, '555666');
+      expect(activeSub.publicSubscriptionId, '777888');
 
       final expiredSub = Subscription(
         id: 'sub-2',
@@ -94,11 +108,15 @@ void main() {
         message: 'لقد انتهت فترة اشتراكك في الأكاديمية.',
         createdAt: DateTime.now(),
         subscriptionId: 'sub-123',
+        senderId: 'admin-1',
+        senderName: 'Manager',
       );
 
       expect(notif.id, 'notif-1');
       expect(notif.type, 'subscription_expired');
       expect(notif.subscriptionId, 'sub-123');
+      expect(notif.senderId, 'admin-1');
+      expect(notif.senderName, 'Manager');
       expect(notif.isRead, isFalse);
     });
   });

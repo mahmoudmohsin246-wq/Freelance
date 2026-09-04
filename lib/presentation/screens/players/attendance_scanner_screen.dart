@@ -54,9 +54,12 @@ class _AttendanceScannerScreenState extends State<AttendanceScannerScreen> {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
 
     final trimmedCode = code.trim();
-    final match = subProv.subscriptions
-        .where((s) => s.attendanceCode.trim().isNotEmpty && s.attendanceCode.trim() == trimmedCode)
-        .toList();
+    final match = subProv.subscriptions.where((s) {
+      final codeMatch = s.attendanceCode.trim().isNotEmpty && s.attendanceCode.trim() == trimmedCode;
+      final pubSubMatch = s.publicSubscriptionId.trim().isNotEmpty && s.publicSubscriptionId.trim() == trimmedCode;
+      final idMatch = s.id.trim() == trimmedCode;
+      return codeMatch || pubSubMatch || idMatch;
+    }).toList();
 
     if (match.isEmpty) {
       setState(() {

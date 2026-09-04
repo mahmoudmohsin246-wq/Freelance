@@ -22,21 +22,25 @@ service cloud.firestore {
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee');
     }
 
+    function hasAdminInvitation(email) {
+      return exists(/databases/$(database)/documents/invitations/$(email))
+        && get(/databases/$(database)/documents/invitations/$(email)).data.role == 'manager';
+    }
+
     // Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated();
 
-      // A user may create their own profile at registration. Academy type
-      // is Football-only app-wide, enforced here too (not just hidden in
-      // the UI).
-      allow create: if (isOwner(userId) || isAdmin())
-        && request.resource.data.sport == 'sportFootball';
+      // A user may create their own profile at registration, but can NEVER set their role to 'admin'
+      // unless an admin pre-invited their email. Academy type must stay Football.
+      allow create: if (isAdmin() || (
+        isOwner(userId)
+        && request.resource.data.sport == 'sportFootball'
+        && (request.resource.data.role != 'admin' || hasAdminInvitation(request.resource.data.email))
+      ));
 
       // A user may update their own profile, but can NEVER change their
-      // own role — that would let a normal user grant themselves
-      // Manager/Admin access and, from there, control subscriptions for
-      // everyone. Only an existing Admin may change someone's role.
-      // Academy type must always stay Football.
+      // own role. Only an existing Admin may change someone's role.
       allow update: if isAdmin()
         || (
           isOwner(userId)
@@ -48,7 +52,8 @@ service cloud.firestore {
 
       // Notifications Subcollection
       match /notifications/{notificationId} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, update, delete: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) || isStaff();
       }
     }
 
@@ -126,10 +131,21 @@ service cloud.firestore {
 
     // Attendance code registry — a 6-digit code claimed per document id,
     // used to guarantee every employee/player code is unique app-wide.
-    // Docs hold no sensitive data (just a timestamp), so any authenticated
-    // user can claim one — this only runs when staff opens someone's QR/code
-    // dialog for the first time.
     match /attendanceCodes/{code} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // Public User ID registry — a 6-digit code claimed per document id
+    match /publicUserIds/{code} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // Public Subscription ID registry — a 6-digit code claimed per document id
+    match /publicSubscriptionIds/{code} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if false;

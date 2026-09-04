@@ -105,7 +105,9 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(loc.translate(ok ? 'subscriptionCreatedSuccess' : 'subscriptionCreationFailed')),
+        content: Text(loc.translate(ok
+            ? (subProv.lastActionWasRenewal ? 'subscriptionRenewedSuccess' : 'subscriptionCreatedSuccess')
+            : 'subscriptionCreationFailed')),
         backgroundColor: ok ? Colors.green : Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ),

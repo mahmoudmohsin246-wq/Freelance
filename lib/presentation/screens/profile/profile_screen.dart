@@ -33,7 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _academyController;
   late TextEditingController _nationalIdController;
-  final String _selectedSportKey = 'sportFootball';
   bool _saving = false;
 
   @override
@@ -93,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             ListTile(
               leading: Icon(Icons.photo_library, color: primaryBlue),
-              title: Text(loc.translate('gallery') ?? 'المعرض', style: TextStyle(color: textColor)),
+              title: Text(loc.translate('gallery'), style: TextStyle(color: textColor)),
               onTap: () async {
                 Navigator.pop(ctx);
                 final ok = await authProv.uploadAvatar(ImageSource.gallery);
@@ -119,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ListTile(
               leading: Icon(Icons.camera_alt, color: primaryBlue),
-              title: Text(loc.translate('camera') ?? 'الكاميرا', style: TextStyle(color: textColor)),
+              title: Text(loc.translate('camera'), style: TextStyle(color: textColor)),
               onTap: () async {
                 Navigator.pop(ctx);
                 final ok = await authProv.uploadAvatar(ImageSource.camera);
@@ -149,29 +148,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showMyQrCode(BuildContext context, UserModel user, AppLocalizations loc) {
-    // IMPORTANT: the scanner matches members by their subscription id, and
-    // employees by their own account id — these are two different id
-    // spaces. Showing the wrong one means the QR (and any manual entry)
-    // can never match anything when scanned/typed.
+  void _showMyQrCode(BuildContext context, UserModel user, AppLocalizations loc) async {
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
     final subProv = Provider.of<SubscriptionProvider>(context, listen: false);
-    String? matchId;
+
+    String? matchCode;
     String? unavailableReason;
+
     if (user.role == UserRole.employee || user.role == UserRole.admin) {
-      matchId = user.id;
+      matchCode = await authProv.ensureAttendanceCode(user);
     } else {
       final activeSub = subProv.userActiveSubscription;
       if (activeSub != null) {
-        matchId = activeSub.id;
+        matchCode = await subProv.ensureSubscriptionAttendanceCode(activeSub);
       } else {
         unavailableReason = loc.translate('noActiveSubscriptionMsg');
       }
     }
 
+    if (!context.mounted) return;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(loc.translate('myQrCode'), style: TextStyle(color: textColor)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -180,41 +181,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 6),
             Text(loc.translate('myQrCodeHint'), style: TextStyle(color: subTextColor, fontSize: 12)),
             const SizedBox(height: 16),
-            if (matchId == null)
+            if (matchCode == null || matchCode.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
                   unavailableReason ?? loc.translate('genericError'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.redAccent, fontSize: 13),
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 13),
                 ),
               )
             else ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 color: Colors.white,
-                child: QrImageView(data: matchId, version: QrVersions.auto, size: 200),
+                child: QrImageView(data: matchCode, version: QrVersions.auto, size: 200),
               ),
               const SizedBox(height: 14),
-              // Plain-text fallback: staff can read/type this manually into
-              // the scanner's "manual code" field if the camera or QR scan
-              // isn't working — attendance no longer has to go through the
-              // camera only.
-              Text(loc.translate('manualCodeEntry'), style: TextStyle(color: subTextColor, fontSize: 11)),
+              Text('كود الحضور الشخصي (6 أرقام)', style: TextStyle(color: subTextColor, fontSize: 11)),
               const SizedBox(height: 6),
               SelectableText(
-                matchId,
+                matchCode,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 2),
               ),
             ],
           ],
         ),
         actions: [
-          if (matchId != null)
+          if (matchCode != null && matchCode.isNotEmpty)
             TextButton.icon(
               onPressed: () {
-                Clipboard.setData(ClipboardData(text: matchId!));
+                Clipboard.setData(ClipboardData(text: matchCode!));
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   SnackBar(content: Text(loc.translate('copiedToClipboard')), behavior: SnackBarBehavior.floating),
                 );
@@ -417,7 +414,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 12),
+
+              FutureBuilder<String>(
+                future: authProv.ensurePublicUserId(user),
+                builder: (ctx, snap) {
+                  final pid = snap.data ?? user.publicUserId;
+                  if (pid.isEmpty) return const SizedBox.shrink();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.badge_outlined, size: 14, color: primaryBlue),
+                        const SizedBox(width: 6),
+                        Text(
+                          'معرّف المستخدم (Public ID): $pid',
+                          style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
 
               _label(loc.translate('fullName')),
               const SizedBox(height: 8),
@@ -579,6 +605,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+              if (user.role == UserRole.coach) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: !user.isProfilePublic,
+                    activeColor: primaryBlue,
+                    onChanged: (isPrivate) async {
+                      final ok = await authProv.updateProfileVisibility(!isPrivate);
+                      if (!mounted) return;
+                      if (!ok) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(loc.translate('privateProfileUpdateFailed')),
+                            backgroundColor: Colors.redAccent,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                    secondary: Icon(
+                      user.isProfilePublic ? Icons.public : Icons.lock_outline_rounded,
+                      color: primaryBlue,
+                    ),
+                    title: Text(loc.translate('privateProfileTitle'),
+                        style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      '${user.isProfilePublic ? loc.translate('privateProfileOffLabel') : loc.translate('privateProfileOnLabel')}\n${loc.translate('privateProfileSubtitle')}',
+                      style: TextStyle(color: subTextColor, fontSize: 11.5),
+                    ),
+                    isThreeLine: true,
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               SizedBox(

@@ -9,10 +9,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AttendanceCodeGenerator {
   static final Random _random = Random();
 
+  /// Backwards-compatible alias for generating a 6-digit attendance code.
   static Future<String> generateUnique(FirebaseFirestore firestore) async {
+    return generateUniqueAttendanceCode(firestore);
+  }
+
+  /// Generates a unique 6-digit attendance check-in code claimed in `attendanceCodes/{code}`.
+  static Future<String> generateUniqueAttendanceCode(FirebaseFirestore firestore) async {
+    return _generateCodeInRegistry(firestore, 'attendanceCodes');
+  }
+
+  /// Generates a unique 6-digit Public User ID claimed in `publicUserIds/{code}`.
+  static Future<String> generateUniquePublicUserId(FirebaseFirestore firestore) async {
+    return _generateCodeInRegistry(firestore, 'publicUserIds');
+  }
+
+  /// Generates a unique 6-digit Public Subscription ID claimed in `publicSubscriptionIds/{code}`.
+  static Future<String> generateUniquePublicSubscriptionId(FirebaseFirestore firestore) async {
+    return _generateCodeInRegistry(firestore, 'publicSubscriptionIds');
+  }
+
+  static Future<String> _generateCodeInRegistry(
+      FirebaseFirestore firestore, String registryCollection) async {
     for (int attempt = 0; attempt < 25; attempt++) {
       final code = (100000 + _random.nextInt(900000)).toString(); // 6 digits: 100000-999999
-      final ref = firestore.collection('attendanceCodes').doc(code);
+      final ref = firestore.collection(registryCollection).doc(code);
       try {
         final claimed = await firestore.runTransaction<bool>((tx) async {
           final snap = await tx.get(ref);
@@ -22,10 +43,9 @@ class AttendanceCodeGenerator {
         });
         if (claimed) return code;
       } catch (_) {
-        // Transaction failed (e.g. transient network issue) — just retry
-        // with a new random candidate.
+        // Retry with a new candidate if transaction fails
       }
     }
-    throw Exception('Could not generate a unique 6-digit attendance code after several attempts');
+    throw Exception('Could not generate a unique 6-digit code in $registryCollection after several attempts');
   }
 }

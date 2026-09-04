@@ -87,17 +87,36 @@ class _PlayersScreenState extends State<PlayersScreen> {
       return;
     }
 
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final viewer = authProv.currentUser;
+    final isViewerStaff = authProv.isManager || viewer?.role == UserRole.employee;
+    final isOwnProfile = viewer != null && viewer.id == sub.userId;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    final authProv = Provider.of<AuthProvider>(context, listen: false);
     final user = await authProv.fetchUserById(sub.userId);
 
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop(); // close loading dialog
     if (!context.mounted) return;
+
+    // Managers and employees can always see full contact info + attendance.
+    // A player looking at another player is blocked when that profile is
+    // private — `fetchUserById` returns null in that case because the
+    // security rules deny the read.
+    if (!isViewerStaff && !isOwnProfile && user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.translate('privateProfileBlocked')),
+          backgroundColor: Colors.orangeAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -113,15 +132,17 @@ class _PlayersScreenState extends State<PlayersScreen> {
     );
   }
 
-  void _showQrDialog(BuildContext context, Subscription sub, AppLocalizations loc, AppColors colors) async {
+  void _showPlayerCodeDialog(BuildContext context, Subscription sub, AppLocalizations loc, AppColors colors) async {
     final subProv = Provider.of<SubscriptionProvider>(context, listen: false);
     final code = await subProv.ensureSubscriptionAttendanceCode(sub);
+    final pubSubId = await subProv.ensurePublicSubscriptionId(sub);
     if (!context.mounted) return;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(loc.translate('playerQrCode'), style: TextStyle(color: colors.textColor)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -148,7 +169,14 @@ class _PlayersScreenState extends State<PlayersScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(loc.translate('manualCodeEntry'), style: TextStyle(color: colors.subTextColor, fontSize: 12)),
+            Text('كود حضور اللاعب (Attendance Code)', style: TextStyle(color: colors.subTextColor, fontSize: 11)),
+            if (pubSubId.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'معرّف الاشتراك: $pubSubId',
+                style: TextStyle(color: colors.textColor, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -278,7 +306,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
                                       visualDensity: VisualDensity.compact,
                                       icon: Icon(Icons.qr_code, size: 18, color: colors.subTextColor),
                                       tooltip: loc.translate('showQrCode'),
-                                      onPressed: () => _showQrDialog(context, sub, loc, colors),
+                                      onPressed: () => _showPlayerCodeDialog(context, sub, loc, colors),
                                     ),
                                   ),
                                 ],

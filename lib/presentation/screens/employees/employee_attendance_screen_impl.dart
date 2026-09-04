@@ -150,12 +150,14 @@ class _EmployeeAttendanceScreenImplState extends State<EmployeeAttendanceScreenI
       BuildContext context, UserModel emp, AppLocalizations loc, AppColors colors) async {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final code = await authProv.ensureAttendanceCode(emp);
+    final pubUserId = await authProv.ensurePublicUserId(emp);
     if (!context.mounted) return;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(loc.translate('playerQrCode'), style: TextStyle(color: colors.textColor)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -178,7 +180,14 @@ class _EmployeeAttendanceScreenImplState extends State<EmployeeAttendanceScreenI
               ),
             ),
             const SizedBox(height: 4),
-            Text(loc.translate('manualCodeEntry'), style: TextStyle(color: colors.subTextColor, fontSize: 12)),
+            Text('كود حضور الموظف (Attendance Code)', style: TextStyle(color: colors.subTextColor, fontSize: 11)),
+            if (pubUserId.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'معرّف الموظف: $pubUserId',
+                style: TextStyle(color: colors.textColor, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ],
           ],
         ),
         actions: [
