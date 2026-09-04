@@ -1,62 +1,43 @@
 name: sports_academy_app
 description: "A new Flutter project for managing sports academies."
 publish_to: 'none'
-
 version: 1.0.0+1
-
 environment:
   sdk: ^3.12.2
-
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-
-  # UI Components & Icons
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
   fl_chart: ^0.68.0
-
-  # QR / Barcode Attendance
   mobile_scanner: ^7.0.0
   qr_flutter: ^4.1.0
-
-  # State Management & Utilities
   provider: ^6.1.2
   intl: ^0.20.2
-
-  # Firebase (Auth + Firestore — kept as-is)
   firebase_core: ^3.12.1
   firebase_auth: ^5.4.0
   cloud_firestore: ^5.6.0
   cloud_functions: ^5.2.0
-
-  # Supabase (Storage only — profile picture uploads)
   supabase_flutter: ^2.8.0
   http: ^1.2.0
-
-  # Local Persistence & File Management
   shared_preferences: ^2.2.2
   path_provider: ^2.1.2
   image_picker: ^1.1.2
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
-
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/logo.png"
   adaptive_icon_background: "#121212"
   adaptive_icon_foreground: "assets/logo.png"
-
 flutter:
   uses-material-design: true
-
   assets:
     - assets/logo.png
     - assets/splash_bg.png
