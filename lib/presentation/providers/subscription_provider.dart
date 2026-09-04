@@ -250,14 +250,25 @@ class SubscriptionProvider extends ChangeNotifier {
 
       if (existing != null) {
         // Renew: extend the existing active subscription's expiry instead
-        // of inserting a second row for the same player.
-        final newExpiry = DateTime(
-          existing.expiryDate.year,
-          existing.expiryDate.month + durationMonths,
-          existing.expiryDate.day,
-        );
+        // of inserting a second row for the same player. Start the new
+        // period right after the current expiry so paying early doesn't
+        // discard remaining days.
+
+        DateTime addMonths(DateTime from, int months) {
+          final int totalMonths = from.month - 1 + months;
+          final int newYear = from.year + (totalMonths ~/ 12);
+          final int newMonth = (totalMonths % 12) + 1;
+          final int day = from.day;
+          final int lastDayOfNewMonth = DateTime(newYear, newMonth + 1, 0).day;
+          final int newDay = day > lastDayOfNewMonth ? lastDayOfNewMonth : day;
+          return DateTime(newYear, newMonth, newDay, from.hour, from.minute, from.second, from.millisecond, from.microsecond);
+        }
+
+        final start = existing.expiryDate; // start new period after current expiry
+        final newExpiry = addMonths(start, durationMonths);
 
         final updateData = {
+          'startDate': start.toIso8601String(),
           'endDate': newExpiry.toIso8601String(),
           'expiryDate': newExpiry.toIso8601String(),
           'durationMonths': durationMonths,
