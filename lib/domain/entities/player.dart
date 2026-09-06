@@ -6,7 +6,7 @@ class PlayerEntity {
   final int age;
   final String phone;
   final String sport;
-  final String status; // Active, Inactive, Pending
+  final String status;
   final DateTime joinedDate;
   final String notes;
 

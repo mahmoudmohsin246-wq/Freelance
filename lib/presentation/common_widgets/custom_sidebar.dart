@@ -37,7 +37,7 @@ class CustomSidebar extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
           const WorkspaceSwitcher(),
-          
+
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -81,7 +81,7 @@ class CustomSidebar extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
-                // MAIN SECTIONS
+
                 _buildNavItem(
                   context,
                   route: 'branches',
@@ -98,13 +98,6 @@ class CustomSidebar extends StatelessWidget {
                 ),
                 _buildNavItem(
                   context,
-                  route: 'invitations',
-                  icon: Icons.mail_outline,
-                  activeIcon: Icons.mail,
-                  title: loc.translate('invitations'),
-                ),
-                _buildNavItem(
-                  context,
                   route: 'packages',
                   icon: Icons.subscriptions_outlined,
                   activeIcon: Icons.subscriptions,
@@ -117,7 +110,7 @@ class CustomSidebar extends StatelessWidget {
                   activeIcon: Icons.person,
                   title: loc.translate('profile'),
                 ),
-                // ADMIN SECTIONS
+
                 if (isAdmin) ...[
                   Padding(
                     padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
@@ -178,7 +171,7 @@ class CustomSidebar extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          // BOTTOM SYSTEM CONTROLS
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(

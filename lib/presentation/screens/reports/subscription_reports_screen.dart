@@ -20,16 +20,15 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
   final _amountController = TextEditingController();
 
   int _selectedDurationMonths = 1;
-  String _selectedDurationLabel = '1 Month';
   DateTime _startDate = DateTime.now();
   bool _isSearching = false;
   bool _isSubmitting = false;
 
   final List<Map<String, dynamic>> _durationOptions = [
-    {'months': 1, 'label': '1 Month (شهر واحد)'},
-    {'months': 3, 'label': '3 Months (3 أشهر)'},
-    {'months': 6, 'label': '6 Months (6 أشهر)'},
-    {'months': 12, 'label': '1 Year (سنة كاملة)'},
+    {'months': 1, 'key': 'duration1Month'},
+    {'months': 3, 'key': 'duration3Months'},
+    {'months': 6, 'key': 'duration6Months'},
+    {'months': 12, 'key': 'duration1Year'},
   ];
 
   @override
@@ -44,11 +43,11 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
   }
 
   Future<void> _handleSearchUser(SubscriptionProvider subProv, AppLocalizations loc) async {
-    final email = _emailSearchController.text.trim();
-    if (email.isEmpty) return;
+    final query = _emailSearchController.text.trim();
+    if (query.isEmpty) return;
 
     setState(() => _isSearching = true);
-    final user = await subProv.searchUserByEmail(email);
+    final user = await subProv.searchUserByIdOrEmail(query);
     setState(() => _isSearching = false);
 
     if (user != null) {
@@ -64,7 +63,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
     final user = subProv.searchedUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى البحث عن مستخدم أولاً'), backgroundColor: Colors.orangeAccent),
+        SnackBar(content: Text(loc.translate('pleaseSearchUserFirst')), backgroundColor: Colors.orangeAccent),
       );
       return;
     }
@@ -73,21 +72,26 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إدخال مبلغ دفع صحيح'), backgroundColor: Colors.orangeAccent),
+        SnackBar(content: Text(loc.translate('pleaseEnterValidAmount')), backgroundColor: Colors.orangeAccent),
       );
       return;
     }
 
     setState(() => _isSubmitting = true);
 
+    final durationKey =
+        _durationOptions.firstWhere((element) => element['months'] == _selectedDurationMonths)['key'] as String;
+    final durationLabel = loc.translate(durationKey);
+
     final success = await subProv.addManagerSubscription(
       userId: user.id,
       userEmail: user.email,
       userName: user.name,
       durationMonths: _selectedDurationMonths,
-      durationLabel: _selectedDurationLabel,
+      durationLabel: durationLabel,
       amountPaid: amount,
       startDate: _startDate,
+      loc: loc,
       financialProvider: finProv,
     );
 
@@ -98,7 +102,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('تم إضافة وتفعيل الاشتراك بنجاح للمستخدم ${user.name}'),
+          content: Text('${loc.translate('subscriptionAddedSuccessFor')} ${user.name}'),
           backgroundColor: const Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
@@ -107,8 +111,8 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
       await subProv.fetchUserSubscriptions(user.id);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('فشل إضافة الاشتراك، يرجى المحاولة مرة أخرى'),
+        SnackBar(
+          content: Text(loc.translate('subscriptionAddFailed')),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -124,7 +128,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
     final loc = AppLocalizations.of(context);
     final colors = AppColors.of(context);
 
-    // Permission check: only Manager/Admin
+
     if (!authProv.isManager) {
       return Container(
         color: colors.scaffoldBg,
@@ -132,7 +136,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Text(
-              'عذراً، هذه الصفحة مخصصة لمدير الأكاديمية فقط إدارة الاشتراكات.',
+              loc.translate('managerOnlyPageMsg'),
               style: TextStyle(color: colors.subTextColor, fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -157,19 +161,19 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Title Banner
+
                 Text(
-                  'إدارة الاشتراكات وإضافة الاشتراكات للمستخدمين',
+                  loc.translate('manageSubscriptionsHeading'),
                   style: TextStyle(color: colors.textColor, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'ابحث عن المستخدم بالبريد الإلكتروني وأضف له اشتراكاً مخصصاً بالمدة والمبلغ المحدد.',
+                  loc.translate('manageSubscriptionsSubtitle'),
                   style: TextStyle(color: colors.subTextColor, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
 
-                // Step 1: Search User by Email Card
+
                 Card(
                   color: colors.cardBg,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -179,7 +183,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          '1. البحث عن المستخدم بالبريد الإلكتروني',
+                          loc.translate('step1SearchUserByEmail'),
                           style: TextStyle(color: colors.textColor, fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),
@@ -191,7 +195,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                 keyboardType: TextInputType.emailAddress,
                                 style: TextStyle(color: colors.textColor),
                                 decoration: InputDecoration(
-                                  hintText: 'أدخل البريد الإلكتروني (e.g. user@gmail.com)',
+                                  hintText: loc.translate('enterEmailHint'),
                                   hintStyle: TextStyle(color: colors.subTextColor, fontSize: 13),
                                   prefixIcon: Icon(Icons.search, color: colors.primaryBlue),
                                   filled: true,
@@ -219,12 +223,12 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(strokeWidth: 2, color: colors.scaffoldBg),
                                     )
-                                  : const Text('بحث', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  : Text(loc.translate('searchButtonLabel'), style: const TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
 
-                        // Search Result Display
+
                         if (searchedUser != null) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -260,7 +264,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                             style: TextStyle(color: colors.subTextColor, fontSize: 13),
                                           ),
                                           Text(
-                                            'UID: ${searchedUser.id}',
+                                            '${loc.translate('userIdLabel')}: ${searchedUser.id}',
                                             style: TextStyle(color: colors.subTextColor, fontSize: 11),
                                           ),
                                         ],
@@ -275,7 +279,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        (activeSub?.isCurrentlyActive ?? false) ? 'نشط (Active)' : 'منتهي / غير مشترك',
+                                        (activeSub?.isCurrentlyActive ?? false) ? loc.translate('activeStatusLabel') : loc.translate('expiredNotSubscribedLabel'),
                                         style: TextStyle(
                                           color: (activeSub?.isCurrentlyActive ?? false) ? Colors.green : Colors.redAccent,
                                           fontWeight: FontWeight.bold,
@@ -295,7 +299,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Step 2: Subscription Details Form (Only if User is selected)
+
                 if (searchedUser != null) ...[
                   Card(
                     color: colors.cardBg,
@@ -306,13 +310,13 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            '2. تفاصيل الاشتراك الجديد للمستخدم',
+                            loc.translate('step2NewSubscriptionDetails'),
                             style: TextStyle(color: colors.textColor, fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 16),
 
-                          // Duration Selection
-                          Text('مدة الاشتراك (Duration):', style: TextStyle(color: colors.textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+
+                          Text('${loc.translate('subscriptionDurationLabel')}:', style: TextStyle(color: colors.textColor, fontSize: 13, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<int>(
                             value: _selectedDurationMonths,
@@ -330,29 +334,28 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                             items: _durationOptions.map((opt) {
                               return DropdownMenuItem<int>(
                                 value: opt['months'] as int,
-                                child: Text(opt['label'] as String, style: TextStyle(color: colors.textColor)),
+                                child: Text(loc.translate(opt['key'] as String), style: TextStyle(color: colors.textColor)),
                               );
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) {
                                 setState(() {
                                   _selectedDurationMonths = val;
-                                  _selectedDurationLabel = _durationOptions.firstWhere((element) => element['months'] == val)['label'];
                                 });
                               }
                             },
                           ),
                           const SizedBox(height: 16),
 
-                          // Amount Paid Input
-                          Text('المبلغ المدفوع (Amount Paid - EGP):', style: TextStyle(color: colors.textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+
+                          Text('${loc.translate('amountPaidEgpLabel')}:', style: TextStyle(color: colors.textColor, fontSize: 13, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
                           TextField(
                             controller: _amountController,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             style: TextStyle(color: colors.textColor),
                             decoration: InputDecoration(
-                              hintText: 'أدخل المبلغ المطلوب (e.g. 500 أو 1200)',
+                              hintText: loc.translate('enterAmountHint'),
                               hintStyle: TextStyle(color: colors.subTextColor, fontSize: 13),
                               prefixIcon: Icon(Icons.attach_money, color: colors.accentGreen),
                               filled: true,
@@ -366,7 +369,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Dates Display
+
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -379,7 +382,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('تاريخ البداية (Start Date):', style: TextStyle(color: colors.subTextColor, fontSize: 12)),
+                                    Text('${loc.translate('startDateLabel')}:', style: TextStyle(color: colors.subTextColor, fontSize: 12)),
                                     Text(dateFormat.format(_startDate), style: TextStyle(color: colors.textColor, fontWeight: FontWeight.bold, fontSize: 13)),
                                   ],
                                 ),
@@ -387,7 +390,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('تاريخ الانتهاء التلقائي (Expiry Date):', style: TextStyle(color: colors.subTextColor, fontSize: 12)),
+                                    Text('${loc.translate('autoExpiryDateLabel')}:', style: TextStyle(color: colors.subTextColor, fontSize: 12)),
                                     Text(
                                       dateFormat.format(calculatedExpiry),
                                       style: TextStyle(color: colors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 13),
@@ -399,7 +402,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          // Submit Button
+
                           SizedBox(
                             height: 48,
                             child: ElevatedButton.icon(
@@ -416,7 +419,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                       height: 22,
                                       child: CircularProgressIndicator(strokeWidth: 2.2, color: colors.scaffoldBg),
                                     )
-                                  : const Text('حفظ وتفعيل الاشتراك للمستخدم', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                                  : Text(loc.translate('saveAndActivateSubscription'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
@@ -425,7 +428,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Step 3: Subscription History
+
                   if (history.isNotEmpty) ...[
                     Card(
                       color: colors.cardBg,
@@ -436,7 +439,7 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'سجل الاشتراكات السابقة للمستخدم',
+                              loc.translate('previousSubscriptionsHistory'),
                               style: TextStyle(color: colors.textColor, fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
@@ -459,11 +462,11 @@ class _SubscriptionReportsScreenState extends State<SubscriptionReportsScreen> {
                                     ),
                                   ),
                                   title: Text(
-                                    '${sub.durationLabel} - ${sub.amountPaid.toStringAsFixed(0)} EGP',
+                                    '${sub.durationLabel} - ${sub.amountPaid.toStringAsFixed(0)} ${loc.translate('egpCurrencyAbbrev')}',
                                     style: TextStyle(color: colors.textColor, fontWeight: FontWeight.bold),
                                   ),
                                   subtitle: Text(
-                                    'من ${dateFormat.format(sub.startDate)} إلى ${dateFormat.format(sub.expiryDate)}',
+                                    '${loc.translate('fromLabel')} ${dateFormat.format(sub.startDate)} ${loc.translate('toLabel')} ${dateFormat.format(sub.expiryDate)}',
                                     style: TextStyle(color: colors.subTextColor, fontSize: 12),
                                   ),
                                   trailing: Text(

@@ -7,10 +7,10 @@ import '../../providers/auth_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Manager/Admin-only audit trail. Reads real entries from Firestore
-/// (`activityLogs`) that get written whenever the app performs a
-/// significant admin action (creating a subscription, changing a user's
-/// role). Empty until such actions happen — never shows fabricated data.
+
+
+
+
 class ActivityLogScreen extends StatefulWidget {
   const ActivityLogScreen({super.key});
 
@@ -91,7 +91,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: Text(log.action,
+                                        child: Text(loc.localizeStoredActivityAction(log.action),
                                             style: TextStyle(color: colors.textColor, fontWeight: FontWeight.bold)),
                                       ),
                                       Text(dateFmt.format(log.timestamp),
@@ -99,7 +99,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(log.details, style: TextStyle(color: colors.subTextColor, fontSize: 13)),
+                                  Text(loc.localizeStoredActivityDetails(log.details), style: TextStyle(color: colors.subTextColor, fontSize: 13)),
                                   const SizedBox(height: 4),
                                   Text('${loc.translate('performedByLabel')}: ${log.userName}',
                                       style: TextStyle(color: colors.subTextColor, fontSize: 11)),

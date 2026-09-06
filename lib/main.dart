@@ -13,11 +13,16 @@ import 'presentation/providers/branches_provider.dart';
 import 'presentation/providers/attendance_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/providers/theme_provider.dart';
-import 'presentation/providers/invitations_provider.dart';
 import 'presentation/providers/activity_log_provider.dart';
 import 'presentation/providers/notification_provider.dart';
+import 'presentation/providers/branch_provider.dart';
+import 'presentation/providers/employee_provider.dart';
+import 'presentation/providers/workspace_provider.dart';
+import 'data/repositories_impl/mock_branch_repository.dart';
+import 'data/repositories_impl/mock_employee_repository.dart';
+import 'data/repositories_impl/mock_academy_repository.dart';
 import 'core/localization/app_localizations.dart';
-import 'presentation/screens/splash/splash_screen.dart'; 
+import 'presentation/screens/splash/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +30,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Supabase is used ONLY for Storage (profile pictures). Auth and all app
-  // data stay on Firebase/Firestore, unchanged.
+
+
   await Supabase.initialize(
     url: 'https://twgcnijtlmcjvuwbyguc.supabase.co',
     anonKey: 'sb_publishable_ITD43wcgrA0QlY_eyYk-Og_qWfAlPjg',
@@ -50,8 +55,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => InvitationsProvider()),
         ChangeNotifierProvider(create: (_) => ActivityLogProvider()),
+        ChangeNotifierProvider(create: (_) => BranchProvider(branchRepo: MockBranchRepository())),
+        ChangeNotifierProvider(create: (_) => EmployeeProvider(employeeRepo: MockEmployeeRepository())),
+        ChangeNotifierProvider(create: (_) => WorkspaceProvider(academyRepo: MockAcademyRepository())),
       ],
       child: Consumer2<LocaleProvider, ThemeProvider>(
         builder: (context, localeProv, themeProv, _) {
@@ -72,7 +79,7 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: const SplashScreen(), 
+            home: const SplashScreen(),
           );
         },
       ),

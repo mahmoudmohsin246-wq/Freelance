@@ -5,9 +5,9 @@ class SalaryRecordEntity {
   final String employeeName;
   final double amount;
   final DateTime paymentDate;
-  final String monthYear; // e.g. "August 2026"
-  final String status; // Paid, Pending
-  final String paymentMethod; // Bank Transfer, Cash, Cheque
+  final String monthYear;
+  final String status;
+  final String paymentMethod;
 
   SalaryRecordEntity({
     required this.id,

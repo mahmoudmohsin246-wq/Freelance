@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-/// A single audit-trail entry for an admin/manager action (e.g. creating a
-/// subscription, promoting a user to Employee). Stored in the top-level
-/// `activityLogs` Firestore collection; only Admin/Manager can read or
-/// write it (see firestore.rules).
+
+
+
+
 class AppActivityLog {
   final String id;
   final String action;
@@ -53,10 +53,10 @@ class AppActivityLog {
   }
 }
 
-/// Real Firestore-backed activity log for the academy's admin/manager
-/// actions. Kept intentionally small: it only records the actions the app
-/// already performs (subscription creation, role changes) rather than
-/// instrumenting every screen.
+
+
+
+
 class ActivityLogProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const _collection = 'activityLogs';
@@ -91,9 +91,9 @@ class ActivityLogProvider extends ChangeNotifier {
     }
   }
 
-  /// Records one audit entry. Safe to call best-effort: failures are
-  /// logged but never thrown, so a logging issue never blocks the actual
-  /// admin action that triggered it.
+
+
+
   Future<void> logAction({
     required String action,
     required String entityType,

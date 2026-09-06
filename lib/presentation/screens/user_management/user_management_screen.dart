@@ -6,11 +6,11 @@ import '../../providers/activity_log_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Manager/Admin-only directory of registered users, with search and the
-/// ability to promote a normal user to Employee (or revert them). Reads
-/// and writes real Firestore data via [AuthProvider]; role changes are
-/// enforced by the Firestore security rules regardless of what happens
-/// in this UI.
+
+
+
+
+
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
 
@@ -46,7 +46,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (mounted) {
         final activityLogProvider = Provider.of<ActivityLogProvider>(context, listen: false);
         await activityLogProvider.logAction(
-          action: newRole == UserRole.employee ? 'User promoted to Employee' : 'User reverted to normal user',
+          action: newRole == UserRole.employee
+              ? loc.translate('userPromotedToEmployeeAction')
+              : loc.translate('userRevertedToNormalAction'),
           entityType: 'user',
           details: '${user.name} (${user.email})',
           userId: authProv.currentUser?.id ?? '',

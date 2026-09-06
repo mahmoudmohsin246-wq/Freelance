@@ -5,12 +5,12 @@ import '../entities/salary.dart';
 abstract class EmployeeRepository {
   Future<List<EmployeeEntity>> getEmployees(String academyId);
   Future<EmployeeEntity> addEmployee(EmployeeEntity employee);
-  
-  // Attendance
+
+
   Future<List<AttendanceEntity>> getAttendanceForDate(String academyId, DateTime date);
   Future<void> recordAttendance(AttendanceEntity attendance);
 
-  // Salaries
+
   Future<List<SalaryRecordEntity>> getSalaryRecords(String academyId);
   Future<SalaryRecordEntity> recordSalaryPayout(SalaryRecordEntity salary);
 }

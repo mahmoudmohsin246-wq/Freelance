@@ -116,7 +116,7 @@ class AboutAppScreenImpl extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              // تم استبدال withOpacity بـ withValues لتوافق مع الإصدارات الأحدث
+
               color: colors.primaryBlue.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),

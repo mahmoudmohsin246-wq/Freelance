@@ -134,9 +134,9 @@ class FinancialProvider extends ChangeNotifier {
     await prefs.setString('financial_transactions', encodedData);
   }
 
-  /// Loads every transaction from Firestore (the source of truth) so the
-  /// revenue/expenses screen reflects reality across devices/sessions,
-  /// instead of relying on a per-device local cache.
+
+
+
   Future<void> loadFinancialData() async {
     _isLoading = true;
     notifyListeners();
@@ -148,8 +148,8 @@ class FinancialProvider extends ChangeNotifier {
       _transactions = list;
     } catch (e) {
       debugPrint('Error loading financial data from Firestore: $e');
-      // Fall back to whatever was last cached locally, if anything, so the
-      // screen isn't left completely empty on a network error.
+
+
       try {
         final prefs = await SharedPreferences.getInstance();
         final String? encodedData = prefs.getString('financial_transactions');

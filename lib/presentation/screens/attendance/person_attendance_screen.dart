@@ -5,10 +5,10 @@ import '../../providers/attendance_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Manager-facing screen: shown when a manager taps on an employee or a
-/// trainee/player. Displays the person's contact info (email, phone,
-/// national ID) plus a month calendar highlighting the days they were
-/// present vs absent.
+
+
+
+
 class PersonAttendanceScreen extends StatefulWidget {
   final String personId;
   final String name;
@@ -71,9 +71,9 @@ class _PersonAttendanceScreenState extends State<PersonAttendanceScreen> {
 
     final firstDayOfMonth = _visibleMonth;
     final daysInMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0).day;
-    // Monday = 1 ... Sunday = 7. We want the grid to start on Saturday
-    // (common week start in this app's locale) — but to keep it simple and
-    // locale-agnostic we start the week on Monday.
+
+
+
     final leadingBlanks = firstDayOfMonth.weekday - 1;
 
     final presentThisMonth = _presentDates.where((k) {

@@ -1,6 +1,28 @@
-// Privacy service helper to enforce private profile access control
 
-import 'package:your_app/models/user.dart';
+
+
+
+
+
+
+
+
+import '../presentation/providers/auth_provider.dart' show UserModel;
+
+
+
+
+abstract class RelationshipService {
+  Future<bool> isFriend(String requesterId, String targetId);
+  Future<bool> isFollower(String requesterId, String targetId);
+}
+
+
+
+
+abstract class AdminService {
+  bool isAdmin(String userId);
+}
 
 class PrivacyService {
   final RelationshipService? relationshipService;
@@ -8,10 +30,9 @@ class PrivacyService {
 
   PrivacyService({this.relationshipService, this.adminService});
 
-  /// Return true if requester can view target's full profile.
-  Future<bool> canViewProfile({User? requester, required User target}) async {
-    final bool isPrivate = (target.profile != null && target.profile['isPrivateProfile'] == true)
-        || (target.isPrivateProfile == true);
+
+  Future<bool> canViewProfile({UserModel? requester, required UserModel target}) async {
+    final bool isPrivate = !target.isProfilePublic;
 
     if (!isPrivate) return true;
     if (requester == null) return false;

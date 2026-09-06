@@ -33,9 +33,9 @@ class _EmployeeAttendanceScreenImplState extends State<EmployeeAttendanceScreenI
     final attendanceProv = context.watch<AttendanceProvider>();
     final subProv = context.watch<SubscriptionProvider>();
     final loc = AppLocalizations.of(context);
-    // A "coach" role account that also has a subscription linked to it is
-    // actually a player/trainee (no dedicated player role exists yet — see
-    // registration flow), not real staff, so it's excluded here.
+
+
+
     final subscriberIds = subProv.subscriptions.map((s) => s.userId).where((id) => id.isNotEmpty).toSet();
     final employees =
         authProv.employeeAccounts.where((e) => !subscriberIds.contains(e.id)).toList();
@@ -180,11 +180,11 @@ class _EmployeeAttendanceScreenImplState extends State<EmployeeAttendanceScreenI
               ),
             ),
             const SizedBox(height: 4),
-            Text('كود حضور الموظف (Attendance Code)', style: TextStyle(color: colors.subTextColor, fontSize: 11)),
+            Text(loc.translate('employeeAttendanceCodeLabel'), style: TextStyle(color: colors.subTextColor, fontSize: 11)),
             if (pubUserId.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                'معرّف الموظف: $pubUserId',
+                '${loc.translate('employeeIdLabel')}: $pubUserId',
                 style: TextStyle(color: colors.textColor, fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ],

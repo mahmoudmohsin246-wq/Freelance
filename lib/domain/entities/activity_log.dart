@@ -3,8 +3,8 @@ class ActivityLogEntity {
   final String academyId;
   final String userId;
   final String userName;
-  final String action; // Action description, e.g. "Player added", "Revenue recorded"
-  final String entityType; // Player, Branch, User, Subscription, Attendance, Salary, Expense
+  final String action;
+  final String entityType;
   final String details;
   final DateTime timestamp;
 

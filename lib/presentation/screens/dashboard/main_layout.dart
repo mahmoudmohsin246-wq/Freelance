@@ -9,14 +9,12 @@ import '../../providers/subscription_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/financial_provider.dart';
 import '../../providers/branches_provider.dart';
-import '../../providers/invitations_provider.dart';
 
 import '../players/players_screen.dart';
 import '../expenses/expenses_screen.dart';
 import '../profile/profile_screen.dart';
 import '../workspaces/workspace_switcher_screen.dart';
 import '../branches/branches_screen_impl.dart';
-import '../invitations/invitations_screen_impl.dart';
 import '../subscriptions/manager_subscriptions_screen.dart';
 import '../subscriptions/my_subscription_screen.dart';
 import '../user_management/user_management_screen.dart';
@@ -61,24 +59,21 @@ class _MainLayoutState extends State<MainLayout> {
         final subProv = Provider.of<SubscriptionProvider>(context, listen: false);
         notifProv.fetchNotifications(user.id);
         subProv.fetchUserSubscriptions(user.id, notificationProvider: notifProv);
-        // The full players list and financial data (used by managers/
-        // employees) are only ever loaded once, when their providers are
-        // first constructed — which can happen before Firebase Auth has
-        // finished restoring the session. Re-load them here, now that we
-        // know login succeeded, so neither screen is ever stuck empty/stale.
+
+
+
+
+
         if (authProv.isManager || authProv.canTakeAttendance) {
           subProv.loadSubscriptions();
         }
         if (authProv.isManager) {
           Provider.of<FinancialProvider>(context, listen: false).loadFinancialData();
         }
-        // Branches are visible to every signed-in user (not just
-        // managers), and subject to the same load-before-auth-is-ready
-        // race as above.
+
+
+
         Provider.of<BranchesProvider>(context, listen: false).loadBranches();
-        if (authProv.isManager) {
-          Provider.of<InvitationsProvider>(context, listen: false).loadInvitations();
-        }
       }
     });
   }
@@ -105,7 +100,7 @@ class _MainLayoutState extends State<MainLayout> {
             children: [
               Icon(Icons.send_rounded, color: primaryBlue),
               const SizedBox(width: 8),
-              Text('إرسال رسالة / إشعار', style: TextStyle(color: textColor, fontSize: 16)),
+              Text(loc.translate('sendMessageNotifTitle'), style: TextStyle(color: textColor, fontSize: 16)),
             ],
           ),
           content: SingleChildScrollView(
@@ -116,14 +111,14 @@ class _MainLayoutState extends State<MainLayout> {
                 Row(
                   children: [
                     ChoiceChip(
-                      label: const Text('مستخدم محدد'),
+                      label: Text(loc.translate('specificUserChip')),
                       selected: !isBroadcast,
                       selectedColor: primaryBlue.withValues(alpha: 0.2),
                       onSelected: (val) => setDialogState(() => isBroadcast = false),
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      label: const Text('إعلان للجميع'),
+                      label: Text(loc.translate('broadcastAllChip')),
                       selected: isBroadcast,
                       selectedColor: primaryBlue.withValues(alpha: 0.2),
                       onSelected: (val) => setDialogState(() => isBroadcast = true),
@@ -136,7 +131,7 @@ class _MainLayoutState extends State<MainLayout> {
                     controller: emailCtrl,
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
-                      labelText: 'البريد الإلكتروني للمستلم',
+                      labelText: loc.translate('recipientEmailLabel'),
                       labelStyle: TextStyle(color: subTextColor),
                       border: const OutlineInputBorder(),
                     ),
@@ -147,7 +142,7 @@ class _MainLayoutState extends State<MainLayout> {
                   controller: titleCtrl,
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
-                    labelText: 'عنوان الرسالة',
+                    labelText: loc.translate('messageTitleLabel'),
                     labelStyle: TextStyle(color: subTextColor),
                     border: const OutlineInputBorder(),
                   ),
@@ -158,7 +153,7 @@ class _MainLayoutState extends State<MainLayout> {
                   maxLines: 3,
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
-                    labelText: 'نص الرسالة',
+                    labelText: loc.translate('messageBodyLabel'),
                     labelStyle: TextStyle(color: subTextColor),
                     border: const OutlineInputBorder(),
                   ),
@@ -184,7 +179,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ? null
                   : () async {
                       if (titleCtrl.text.trim().isEmpty || messageCtrl.text.trim().isEmpty) {
-                        setDialogState(() => errorMsg = 'يرجى كتابة العنوان ونص الرسالة');
+                        setDialogState(() => errorMsg = loc.translate('pleaseEnterTitleAndBody'));
                         return;
                       }
                       setDialogState(() {
@@ -194,7 +189,7 @@ class _MainLayoutState extends State<MainLayout> {
 
                       final sender = authProv.currentUser;
                       final senderId = sender?.id ?? '';
-                      final senderName = sender?.name ?? 'الإدارة';
+                      final senderName = sender?.name ?? loc.translate('academyManagementLabel');
 
                       try {
                         if (isBroadcast) {
@@ -219,8 +214,8 @@ class _MainLayoutState extends State<MainLayout> {
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('تم إرسال الإشعار بنجاح'),
+                            SnackBar(
+                              content: Text(loc.translate('notificationSentSuccess')),
                               backgroundColor: Colors.green,
                             ),
                           );
@@ -230,18 +225,18 @@ class _MainLayoutState extends State<MainLayout> {
                         setDialogState(() {
                           sending = false;
                           if (msg.contains('enterValidEmail')) {
-                            errorMsg = 'يرجى إدخال بريد إلكتروني صحيح';
+                            errorMsg = loc.translate('enterValidEmailMsg');
                           } else if (msg.contains('noAccountWithEmail')) {
-                            errorMsg = 'لا يوجد حساب مسجل بهذا البريد الإلكتروني';
+                            errorMsg = loc.translate('noAccountWithEmailMsg');
                           } else {
-                            errorMsg = 'حدث خطأ أثناء الإرسال: $e';
+                            errorMsg = '${loc.translate('sendErrorPrefix')}: $e';
                           }
                         });
                       }
                     },
               child: sending
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('إرسال'),
+                  : Text(loc.translate('sendButton')),
             ),
           ],
         ),
@@ -250,6 +245,7 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   void _showNotificationsSheet(BuildContext context, NotificationProvider notifProv, AuthProvider authProv) {
+    final loc = AppLocalizations.of(context);
     final user = authProv.currentUser;
     if (user != null) {
       notifProv.fetchNotifications(user.id);
@@ -281,7 +277,7 @@ class _MainLayoutState extends State<MainLayout> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'الإشعارات والرسائل',
+                          loc.translate('notificationsAndMessagesTitle'),
                           style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         Row(
@@ -289,12 +285,12 @@ class _MainLayoutState extends State<MainLayout> {
                             if (unread > 0 && user != null)
                               TextButton(
                                 onPressed: () => nProv.markAllAsRead(user.id),
-                                child: const Text('تحديد الكل كقروء', style: TextStyle(fontSize: 12)),
+                                child: Text(loc.translate('markAllAsReadLabel'), style: const TextStyle(fontSize: 12)),
                               ),
                             if (isManager)
                               IconButton(
                                 icon: Icon(Icons.add_comment_outlined, color: primaryBlue),
-                                tooltip: 'إرسال إشعار للمستخدمين',
+                                tooltip: loc.translate('sendNotificationToUsersLabel'),
                                 onPressed: () {
                                   Navigator.pop(ctx);
                                   _showSendMessageDialog(context, nProv, authProv);
@@ -309,7 +305,7 @@ class _MainLayoutState extends State<MainLayout> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 30),
                         child: Center(
-                          child: Text('لا توجد إشعارات حالياً', style: TextStyle(color: subTextColor, fontSize: 14)),
+                          child: Text(loc.translate('noNotificationsCurrently'), style: TextStyle(color: subTextColor, fontSize: 14)),
                         ),
                       )
                     else
@@ -347,7 +343,7 @@ class _MainLayoutState extends State<MainLayout> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        notif.title.isNotEmpty ? notif.title : 'إشعار من الأكاديمية',
+                                        notif.title.isNotEmpty ? notif.title : loc.translate('academyNotificationDefaultTitle'),
                                         style: TextStyle(
                                           color: textColor,
                                           fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
@@ -362,7 +358,7 @@ class _MainLayoutState extends State<MainLayout> {
                                           color: Colors.purple.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
-                                        child: const Text('إعلان', style: TextStyle(fontSize: 10, color: Colors.purpleAccent)),
+                                        child: Text(loc.translate('announcementLabel'), style: const TextStyle(fontSize: 10, color: Colors.purpleAccent)),
                                       ),
                                   ],
                                 ),
@@ -379,7 +375,7 @@ class _MainLayoutState extends State<MainLayout> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         if (notif.senderName.isNotEmpty)
-                                          Text('من: ${notif.senderName}', style: TextStyle(color: primaryBlue, fontSize: 10)),
+                                          Text('${loc.translate('fromLabel')}: ${notif.senderName}', style: TextStyle(color: primaryBlue, fontSize: 10)),
                                         Text(timeStr, style: TextStyle(color: subTextColor, fontSize: 10)),
                                       ],
                                     ),
@@ -400,15 +396,15 @@ class _MainLayoutState extends State<MainLayout> {
                                         children: [
                                           Text(notif.message, style: TextStyle(color: textColor, fontSize: 14)),
                                           const SizedBox(height: 12),
-                                          Text('التاريخ: $timeStr', style: TextStyle(color: subTextColor, fontSize: 11)),
+                                          Text('${loc.translate('dateLabel')}: $timeStr', style: TextStyle(color: subTextColor, fontSize: 11)),
                                           if (notif.senderName.isNotEmpty)
-                                            Text('المرسل: ${notif.senderName}', style: TextStyle(color: subTextColor, fontSize: 11)),
+                                            Text('${loc.translate('senderLabel')}: ${notif.senderName}', style: TextStyle(color: subTextColor, fontSize: 11)),
                                         ],
                                       ),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(context),
-                                          child: const Text('إغلاق'),
+                                          child: Text(loc.translate('close')),
                                         ),
                                       ],
                                     ),
@@ -437,21 +433,20 @@ class _MainLayoutState extends State<MainLayout> {
     _colors = AppColors.of(context);
 
     final screens = <Widget>[
-      const BranchesScreenImpl(),               // 0: الفروع والمجموعات
-      const ProfileScreen(),                    // 1: الملف الشخصي
-      const WorkspaceSwitcherScreen(),          // 2: مساحات العمل
-      const InvitationsScreenImpl(),            // 3: الدعوات المعلقة
-      const PlayersScreen(),                    // 4: قائمة اللاعبين العامة
-      isManager                                 // 5: إدارة الاشتراكات (مدير) / اشتراكي (مستخدم عادي)
+      const BranchesScreenImpl(),
+      const ProfileScreen(),
+      const WorkspaceSwitcherScreen(),
+      const PlayersScreen(),
+      isManager
           ? const ManagerSubscriptionsScreen()
           : const MySubscriptionScreen(),
-      const UserManagementScreen(),             // 6: إدارة المستخدمين (للمدير)
-      const ActivityLogScreen(),                // 7: سجل نشاط الأكاديمية (للمدير)
-      const SubscriptionReportsScreen(),        // 8: تقرير الاشتراكات (للمدير)
-      const RevenueReportsScreen(),             // 9: تقرير الإيرادات الأخرى (للمدير)
-      const EmployeeAttendanceScreenImpl(),     // 10: حضور ورواتب الموظفين (للمدير)
-      const ExpensesScreen(),                   // 11: المصروفات الأخرى (للمدير)
-      const AboutAppScreenImpl(),               // 12: حول التطبيق
+      const UserManagementScreen(),
+      const ActivityLogScreen(),
+      const SubscriptionReportsScreen(),
+      const RevenueReportsScreen(),
+      const EmployeeAttendanceScreenImpl(),
+      const ExpensesScreen(),
+      const AboutAppScreenImpl(),
     ];
 
     final isWide = Responsive.isWideScreen(context);
@@ -495,7 +490,7 @@ class _MainLayoutState extends State<MainLayout> {
                 children: [
                   IconButton(
                     icon: Icon(Icons.notifications_outlined, color: primaryBlue),
-                    tooltip: 'الإشعارات',
+                    tooltip: loc.translate('notificationsLabel'),
                     onPressed: () => _showNotificationsSheet(context, notifProv, authProv),
                   ),
                   if (unread > 0)
@@ -588,8 +583,8 @@ class _MainLayoutState extends State<MainLayout> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(authProv.isEmailVerified
-                                    ? 'تم التحقق من البريد الإلكتروني بنجاح!'
-                                    : 'لم يتم توثيق البريد بعد، يرجى الضغط على الرابط المرسل في بريدك الإلكتروني.'),
+                                    ? loc.translate('emailVerifiedSuccessMsg')
+                                    : loc.translate('emailNotVerifiedYetMsg')),
                                 backgroundColor: authProv.isEmailVerified ? Colors.green : Colors.amber.shade800,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -643,8 +638,8 @@ class _MainLayoutState extends State<MainLayout> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(authProv.isEmailVerified
-                            ? 'تم التحقق من البريد الإلكتروني بنجاح!'
-                            : 'لم يتم توثيق البريد بعد، يرجى الضغط على الرابط المرسل في بريدك الإلكتروني.'),
+                            ? loc.translate('emailVerifiedSuccessMsg')
+                            : loc.translate('emailNotVerifiedYetMsg')),
                         backgroundColor: authProv.isEmailVerified ? Colors.green : Colors.amber.shade800,
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -727,7 +722,7 @@ class _MainLayoutState extends State<MainLayout> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         ),
                         onPressed: () {
-                          setState(() => _selectedIndex = 5);
+                          setState(() => _selectedIndex = 4);
                           if (!_isWide) Navigator.pop(context);
                         },
                         child: Text(loc.translate(isManager ? 'manageButton' : 'viewButton'),
@@ -746,9 +741,8 @@ class _MainLayoutState extends State<MainLayout> {
 
             _drawerTile(Icons.grid_view_rounded, loc.translate('branchesAndGroups'), primaryBlue, 0),
             _drawerTile(Icons.person_outline, loc.translate('profile'), Colors.amber, 1),
-            _drawerTile(Icons.mail_outline, loc.translate('invitations'), Colors.purpleAccent, 3),
-            _drawerTile(Icons.groups_outlined, loc.translate('publicPlayersList'), Colors.tealAccent, 4),
-            _drawerTile(Icons.star_outline, loc.translate('packagesAndSubscriptions'), Colors.amberAccent, 5),
+            _drawerTile(Icons.groups_outlined, loc.translate('publicPlayersList'), Colors.tealAccent, 3),
+            _drawerTile(Icons.star_outline, loc.translate('packagesAndSubscriptions'), Colors.amberAccent, 4),
 
             if (isManager) ...[
               const SizedBox(height: 16),
@@ -756,19 +750,19 @@ class _MainLayoutState extends State<MainLayout> {
                   style: TextStyle(color: subTextColor, fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
 
-              _drawerTile(Icons.admin_panel_settings_outlined, loc.translate('userManagement'), Colors.indigoAccent, 6),
-              _drawerTile(Icons.history, loc.translate('activityLog'), Colors.pinkAccent, 7),
-              _drawerTile(Icons.receipt_long, loc.translate('subscriptionReports'), Colors.greenAccent, 8),
-              _drawerTile(Icons.bar_chart, loc.translate('otherRevenueReport'), Colors.pink, 9),
-              _drawerTile(Icons.badge_outlined, loc.translate('employeeAttendanceAndSalaries'), Colors.teal, 10),
-              _drawerTile(Icons.account_balance_wallet_outlined, loc.translate('otherExpenses'), Colors.redAccent, 11),
+              _drawerTile(Icons.admin_panel_settings_outlined, loc.translate('userManagement'), Colors.indigoAccent, 5),
+              _drawerTile(Icons.history, loc.translate('activityLog'), Colors.pinkAccent, 6),
+              _drawerTile(Icons.receipt_long, loc.translate('subscriptionReports'), Colors.greenAccent, 7),
+              _drawerTile(Icons.bar_chart, loc.translate('otherRevenueReport'), Colors.pink, 8),
+              _drawerTile(Icons.badge_outlined, loc.translate('employeeAttendanceAndSalaries'), Colors.teal, 9),
+              _drawerTile(Icons.account_balance_wallet_outlined, loc.translate('otherExpenses'), Colors.redAccent, 10),
             ],
 
             const SizedBox(height: 16),
             Text(loc.translate('aboutApp'),
                 style: TextStyle(color: subTextColor, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            _drawerTile(Icons.info_outline, loc.translate('aboutAppAndPolicies'), Colors.blueGrey, 12),
+            _drawerTile(Icons.info_outline, loc.translate('aboutAppAndPolicies'), Colors.blueGrey, 11),
 
             Divider(color: borderColor),
 
@@ -828,16 +822,15 @@ class _MainLayoutState extends State<MainLayout> {
       case 0: return loc.translate('branchesAndGroups');
       case 1: return loc.translate('profile');
       case 2: return loc.translate('workspacesTitle');
-      case 3: return loc.translate('pendingInvitationsTitle');
-      case 4: return loc.translate('manageAllPlayersTitle');
-      case 5: return loc.translate(isManager ? 'manageSubscriptionsTitle' : 'mySubscriptionTitle');
-      case 6: return loc.translate('userManagement');
-      case 7: return loc.translate('activityLog');
-      case 8: return loc.translate('subscriptionReports');
-      case 9: return loc.translate('otherRevenueReport');
-      case 10: return loc.translate('employeeAttendanceAndSalaries');
-      case 11: return loc.translate('otherExpenses');
-      case 12: return loc.translate('aboutApp');
+      case 3: return loc.translate('manageAllPlayersTitle');
+      case 4: return loc.translate(isManager ? 'manageSubscriptionsTitle' : 'mySubscriptionTitle');
+      case 5: return loc.translate('userManagement');
+      case 6: return loc.translate('activityLog');
+      case 7: return loc.translate('subscriptionReports');
+      case 8: return loc.translate('otherRevenueReport');
+      case 9: return loc.translate('employeeAttendanceAndSalaries');
+      case 10: return loc.translate('otherExpenses');
+      case 11: return loc.translate('aboutApp');
       default: return loc.translate('appName');
     }
   }
@@ -927,18 +920,6 @@ class BranchesScreenPlaceholder extends StatelessWidget {
     final colors = AppColors.of(context);
     return Center(
       child: Text(loc.translate('noBranchesYet'), style: TextStyle(color: colors.subTextColor, fontSize: 16)),
-    );
-  }
-}
-
-class InvitationsScreenPlaceholder extends StatelessWidget {
-  final AppLocalizations loc;
-  const InvitationsScreenPlaceholder({super.key, required this.loc});
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Center(
-      child: Text(loc.translate('noPendingInvitations'), style: TextStyle(color: colors.subTextColor, fontSize: 16)),
     );
   }
 }

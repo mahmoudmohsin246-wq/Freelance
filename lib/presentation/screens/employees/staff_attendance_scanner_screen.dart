@@ -156,7 +156,7 @@ class _StaffAttendanceScannerScreenState extends State<StaffAttendanceScannerScr
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'خطأ في فتح الكاميرا:\n'
+                              "${loc.translate('cameraOpenErrorPrefix')}\n"
                               '${error.errorCode}\n'
                               '${error.errorDetails?.message ?? ""}',
                               textAlign: TextAlign.center,
@@ -166,7 +166,7 @@ class _StaffAttendanceScannerScreenState extends State<StaffAttendanceScannerScr
                             ElevatedButton.icon(
                               onPressed: _recreateController,
                               icon: const Icon(Icons.refresh),
-                              label: const Text('إعادة محاولة فتح الكاميرا'),
+                              label: Text(loc.translate('retryOpenCamera')),
                             ),
                           ],
                         ),

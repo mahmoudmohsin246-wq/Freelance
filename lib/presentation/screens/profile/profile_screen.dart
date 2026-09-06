@@ -197,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: QrImageView(data: matchCode, version: QrVersions.auto, size: 200),
               ),
               const SizedBox(height: 14),
-              Text('كود الحضور الشخصي (6 أرقام)', style: TextStyle(color: subTextColor, fontSize: 11)),
+              Text(loc.translate('personalAttendanceCodeHint'), style: TextStyle(color: subTextColor, fontSize: 11)),
               const SizedBox(height: 6),
               SelectableText(
                 matchCode,
@@ -435,7 +435,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Icon(Icons.badge_outlined, size: 14, color: primaryBlue),
                         const SizedBox(width: 6),
                         Text(
-                          'معرّف المستخدم (Public ID): $pid',
+                          "${loc.translate('userIdLabel')}: $pid",
                           style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -523,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Icon(Icons.lock_outline_rounded, color: subTextColor, size: 18),
                     const Spacer(),
-                    Text('كرة القدم (Football)',
+                    Text(loc.translate('footballSportLabel'),
                         style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 8),
                     const Icon(Icons.sports_soccer, color: Colors.green, size: 20),

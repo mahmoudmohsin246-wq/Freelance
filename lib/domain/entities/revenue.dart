@@ -4,7 +4,7 @@ class RevenueEntity {
   final String title;
   final double collectedAmount;
   final double remainingAmount;
-  final String category; // Sponsor, Merchandise, Tournament Fee, Facility Rental
+  final String category;
   final DateTime date;
   final String description;
 

@@ -103,7 +103,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Sends a targeted message to a specific user.
+
   Future<bool> sendNotificationToUser({
     required String targetUserId,
     required String title,
@@ -139,7 +139,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Sends a broadcast notification to a list of target user IDs.
+
   Future<void> sendBroadcastNotification({
     required List<String> targetUserIds,
     required String title,
@@ -179,8 +179,8 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Sends a targeted message to a user resolved by their email address.
-  /// Throws an Exception if the email is not found or empty.
+
+
   Future<bool> sendNotificationByEmail({
     required String recipientEmail,
     required String title,
@@ -231,8 +231,8 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Creates a persistent reminder notification with an idempotent [eventKey].
-  /// Guaranteed to execute at most once per distinct event key (e.g. `sub123_expiring_5_days`).
+
+
   Future<void> checkAndCreateReminderNotification({
     required String userId,
     required String subscriptionId,
@@ -250,7 +250,7 @@ class NotificationProvider extends ChangeNotifier {
 
       final query = await ref.where('eventKey', isEqualTo: eventKey.trim()).get();
       if (query.docs.isNotEmpty) {
-        // Notification already created for this specific event key
+
         return;
       }
 
@@ -273,7 +273,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Creates a persistent expiry notification if one does not already exist for [subscriptionId].
+
   Future<void> checkAndCreateExpiryNotification({
     required String userId,
     required String subscriptionId,

@@ -19,7 +19,7 @@ class WorkspaceSwitcher extends StatelessWidget {
     if (academy == null) {
       return Container(
         padding: const EdgeInsets.all(16),
-        child: const Text('No Academy Selected'),
+        child: Text(loc.translate('noAcademySelected')),
       );
     }
 
@@ -248,7 +248,7 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                         labelText: loc.translate('academyName'),
                         prefixIcon: const Icon(Icons.sports),
                       ),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      validator: (val) => val == null || val.isEmpty ? loc.translate('requiredField') : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -257,31 +257,31 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                         labelText: loc.translate('sport'),
                         prefixIcon: const Icon(Icons.sports_soccer),
                       ),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      validator: (val) => val == null || val.isEmpty ? loc.translate('requiredField') : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _logoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Logo Image URL',
+                      decoration: InputDecoration(
+                        labelText: loc.translate('logoImageUrlLabel'),
                         hintText: 'https://...',
-                        prefixIcon: Icon(Icons.image),
+                        prefixIcon: const Icon(Icons.image),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone',
-                        prefixIcon: Icon(Icons.phone),
+                      decoration: InputDecoration(
+                        labelText: loc.translate('phoneNumberLabel'),
+                        prefixIcon: const Icon(Icons.phone),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'Address',
-                        prefixIcon: Icon(Icons.location_on),
+                      decoration: InputDecoration(
+                        labelText: loc.translate('addressLabel'),
+                        prefixIcon: const Icon(Icons.location_on),
                       ),
                     ),
                     const SizedBox(height: 20),

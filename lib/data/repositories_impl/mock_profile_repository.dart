@@ -27,7 +27,7 @@ class MockProfileRepository implements ProfileRepository {
   @override
   Future<bool> changePassword(String userId, String oldPassword, String newPassword) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    // Simulated successful password change
+
     return true;
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../auth/auth_gate.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // مؤقت زمني لمدة 3 ثوانٍ ثم الانتقال التلقائي لشاشة الـ AuthGate
+
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -27,47 +28,48 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. خلفية داكنة ذكية تملأ الفراغات الجانبية على اللاب توب والتابلت
+
           Container(
-            color: const Color(0xFF0A0E17), // لون مستوحى من أطراف صورة الملعب
+            color: const Color(0xFF0A0E17),
           ),
 
-          // 2. عرض صورة الكرة والملعب بالكامل بدون أي قص أو زوم خاطئ
+
           Center(
             child: Image.asset(
-              'assets/splash_bg.png', // تأكد أن صورة الملعب موجودة بهذا الاسم في مجلد assets
-              fit: BoxFit.contain,    // يجبر الصورة على الظهور كاملة بكافة تفاصيلها
+              'assets/splash_bg.png',
+              fit: BoxFit.contain,
               width: double.infinity,
               height: double.infinity,
             ),
           ),
 
-          // 3. طبقة تظليل خفيفة لإعطاء طابع سينمائي وضمان وضوح العناصر
+
           Container(
             color: Colors.black.withOpacity(0.15),
           ),
 
-          // 4. المحتوى العلوي والسفلي (اسم التطبيق ومؤشر التحميل)
+
           SafeArea(
             child: Stack(
               children: [
-                // اسم التطبيق في الثلث العلوي من الشاشة لمنع تغطية الكرة
+
                 Positioned(
                   top: MediaQuery.of(context).size.height * 0.12,
                   left: 0,
                   right: 0,
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'Sports Academy App',
+                      loc.translate('appName'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white, // لون أبيض ثابت يتماشى مع أجواء الملعب
+                        color: Colors.white,
                         letterSpacing: 0.5,
                         shadows: [
                           Shadow(
@@ -81,14 +83,14 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
 
-                // مؤشر التحميل الدائري باللون الأخضر المميز في الأسفل
+
                 Positioned(
                   bottom: 60,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: CircularProgressIndicator(
-                      color: colors.primaryColor, // الأخضر الرياضي الخاص بهويتك
+                      color: colors.primaryColor,
                       strokeWidth: 3.5,
                     ),
                   ),

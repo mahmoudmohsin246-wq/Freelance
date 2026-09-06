@@ -2,7 +2,6 @@ import '../../domain/entities/user.dart';
 import '../../domain/entities/academy.dart';
 import '../../domain/entities/branch.dart';
 import '../../domain/entities/player.dart';
-import '../../domain/entities/invitation.dart';
 import '../../domain/entities/package_subscription.dart';
 import '../../domain/entities/employee.dart';
 import '../../domain/entities/attendance.dart';
@@ -22,7 +21,7 @@ class MockDatabase {
   final List<AcademyEntity> academies = [];
   final List<BranchEntity> branches = [];
   final List<PlayerEntity> players = [];
-  final List<InvitationEntity> invitations = [];
+
   final List<PackageEntity> packages = [];
   final List<SubscriptionEntity> subscriptions = [];
   final List<EmployeeEntity> employees = [];
@@ -33,7 +32,7 @@ class MockDatabase {
   final List<ActivityLogEntity> activityLogs = [];
 
   void _initData() {
-    // Academies
+
     academies.addAll([
       AcademyEntity(
         id: 'academy-1',
@@ -57,7 +56,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Users
+
     currentUser = UserEntity(
       id: 'user-1',
       name: 'Mahmoud Mohsin',
@@ -93,7 +92,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Branches
+
     branches.addAll([
       BranchEntity(
         id: 'branch-1',
@@ -124,7 +123,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Players
+
     players.addAll([
       PlayerEntity(
         id: 'player-1',
@@ -176,29 +175,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Invitations
-    invitations.addAll([
-      InvitationEntity(
-        id: 'inv-1',
-        academyId: 'academy-1',
-        email: 'coach.tariq@gmail.com',
-        role: 'Assistant Coach',
-        status: InvitationStatus.pending,
-        sentAt: DateTime.now().subtract(const Duration(days: 2)),
-        invitedBy: 'Mahmoud Mohsin',
-      ),
-      InvitationEntity(
-        id: 'inv-2',
-        academyId: 'academy-1',
-        email: 'admin.linda@gmail.com',
-        role: 'Administrator',
-        status: InvitationStatus.pending,
-        sentAt: DateTime.now().subtract(const Duration(days: 5)),
-        invitedBy: 'Mahmoud Mohsin',
-      ),
-    ]);
 
-    // Packages & Subscriptions
     packages.addAll([
       PackageEntity(
         id: 'pkg-free',
@@ -247,7 +224,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Employees
+
     employees.addAll([
       EmployeeEntity(
         id: 'emp-1',
@@ -278,7 +255,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Attendance
+
     final today = DateTime.now();
     attendanceRecords.addAll([
       AttendanceEntity(
@@ -307,7 +284,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Salary Records
+
     salaryRecords.addAll([
       SalaryRecordEntity(
         id: 'sal-1',
@@ -333,7 +310,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Revenues
+
     revenues.addAll([
       RevenueEntity(
         id: 'rev-1',
@@ -357,7 +334,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Expenses
+
     expenses.addAll([
       ExpenseEntity(
         id: 'exp-1',
@@ -381,7 +358,7 @@ class MockDatabase {
       ),
     ]);
 
-    // Activity Logs
+
     activityLogs.addAll([
       ActivityLogEntity(
         id: 'log-1',
@@ -402,16 +379,6 @@ class MockDatabase {
         entityType: 'Branch',
         details: 'Opened new branch: North Training Facility',
         timestamp: DateTime.now().subtract(const Duration(days: 120)),
-      ),
-      ActivityLogEntity(
-        id: 'log-3',
-        academyId: 'academy-1',
-        userId: 'user-1',
-        userName: 'Mahmoud Mohsin',
-        action: 'Invitation Sent',
-        entityType: 'Invitation',
-        details: 'Invited coach.tariq@gmail.com as Assistant Coach',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
       ),
       ActivityLogEntity(
         id: 'log-4',

@@ -100,13 +100,13 @@ class _PlayersScreenState extends State<PlayersScreen> {
 
     final user = await authProv.fetchUserById(sub.userId);
 
-    if (context.mounted) Navigator.of(context, rootNavigator: true).pop(); // close loading dialog
+    if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     if (!context.mounted) return;
 
-    // Managers and employees can always see full contact info + attendance.
-    // A player looking at another player is blocked when that profile is
-    // private — `fetchUserById` returns null in that case because the
-    // security rules deny the read.
+
+
+
+
     if (!isViewerStaff && !isOwnProfile && user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -169,11 +169,11 @@ class _PlayersScreenState extends State<PlayersScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text('كود حضور اللاعب (Attendance Code)', style: TextStyle(color: colors.subTextColor, fontSize: 11)),
+            Text(loc.translate('playerAttendanceCodeLabel'), style: TextStyle(color: colors.subTextColor, fontSize: 11)),
             if (pubSubId.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                'معرّف الاشتراك: $pubSubId',
+                "${loc.translate('subscriptionIdLabel')}: $pubSubId",
                 style: TextStyle(color: colors.textColor, fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ],
@@ -380,6 +380,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
                   sportName: sportController.text.isEmpty ? loc.translate('general') : sportController.text,
                   price: price,
                   durationInDays: 30,
+                  loc: loc,
                   financialProvider: finProv,
                 );
                 Navigator.of(ctx).pop();

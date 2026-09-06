@@ -13,20 +13,103 @@ class AppLocalizations {
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
       'appName': 'Sports Academy System',
+
+      'sendMessageNotifTitle': 'Send Message / Notification',
+      'specificUserChip': 'Specific User',
+      'broadcastAllChip': 'Broadcast to All',
+      'recipientEmailLabel': 'Recipient Email',
+      'messageTitleLabel': 'Message Title',
+      'messageBodyLabel': 'Message Body',
+      'pleaseEnterTitleAndBody': 'Please enter the title and message body',
+      'academyManagementLabel': 'Management',
+      'notificationSentSuccess': 'Notification sent successfully',
+      'enterValidEmailMsg': 'Please enter a valid email',
+      'noAccountWithEmailMsg': 'No account is registered with this email',
+      'sendErrorPrefix': 'An error occurred while sending',
+      'sendButton': 'Send',
+      'notificationsAndMessagesTitle': 'Notifications & Messages',
+      'markAllAsReadLabel': 'Mark all as read',
+      'sendNotificationToUsersLabel': 'Send notification to users',
+      'noNotificationsCurrently': 'No notifications currently',
+      'academyNotificationDefaultTitle': 'Notification from the academy',
+      'announcementLabel': 'Announcement',
+      'fromLabel': 'From',
+      'dateLabel': 'Date',
+      'senderLabel': 'Sender',
+      'notificationsLabel': 'Notifications',
+      'emailVerifiedSuccessMsg': 'Email verified successfully!',
+      'emailNotVerifiedYetMsg': 'Your email is not verified yet — please click the link sent to your email.',
+
+      'duration1Month': '1 Month',
+      'duration3Months': '3 Months',
+      'duration6Months': '6 Months',
+      'duration1Year': '1 Year',
+      'pleaseSearchUserFirst': 'Please search for a user first',
+      'pleaseEnterValidAmount': 'Please enter a valid payment amount',
+      'subscriptionAddedSuccessFor': 'Subscription added and activated successfully for',
+      'subscriptionAddFailed': 'Failed to add the subscription, please try again',
+      'managerOnlyPageMsg': 'Sorry, this page is for the academy manager only — subscription management.',
+      'manageSubscriptionsHeading': 'Manage subscriptions and add subscriptions for users',
+      'manageSubscriptionsSubtitle':
+          "Search for the user by email and add them a custom subscription with the chosen duration and amount.",
+      'step1SearchUserByEmail': '1. Search for the user by ID or email',
+      'enterEmailHint': 'Enter the public ID or email (e.g. user@gmail.com)',
+      'searchButtonLabel': 'Search',
+      'activeStatusLabel': 'Active',
+      'expiredNotSubscribedLabel': 'Expired / Not subscribed',
+      'step2NewSubscriptionDetails': '2. New subscription details for the user',
+      'subscriptionDurationLabel': 'Subscription Duration',
+      'amountPaidEgpLabel': 'Amount Paid (EGP)',
+      'enterAmountHint': 'Enter the amount (e.g. 500 or 1200)',
+      'startDateLabel': 'Start Date',
+      'autoExpiryDateLabel': 'Automatic Expiry Date',
+      'saveAndActivateSubscription': 'Save and activate the subscription for the user',
+      'previousSubscriptionsHistory': "User's previous subscription history",
+      'toLabel': 'to',
+
+      'academyNameLabel': 'Academy Name',
+      'newAcademyChip': 'New Academy',
+      'existingAcademyChip': 'Existing Academy',
+      'chooseAcademyFromListHint': 'Choose the academy from the list',
+      'enterAcademyNameHint': 'Enter the academy name',
+      'pleaseEnterAcademyName': 'Please enter the academy name',
+      'pleaseSelectAcademy': 'Please select the academy',
+      'phoneNumberLabel': 'Phone Number',
+
+      'attendanceCodeLabel': 'Attendance Code',
+      'subscriptionIdLabel': 'Subscription ID',
+      'userIdLabel': 'User ID',
+      'employeeAttendanceCodeLabel': 'Employee Attendance Code',
+      'employeeIdLabel': 'Employee ID',
+      'personalAttendanceCodeHint': 'Personal attendance code (6 digits)',
+      'playerAttendanceCodeLabel': "Player's Attendance Code",
+      'footballSportLabel': 'Football',
+      'egpCurrencyAbbrev': 'EGP',
+      'cameraOpenErrorPrefix': 'Error opening camera:',
+      'retryOpenCamera': 'Retry opening camera',
+      'subscriptionRenewedPrefix': 'Subscription renewed',
+      'subscriptionPrefix': 'Subscription',
+      'subscriptionsCategoryLabel': 'Subscriptions',
+      'subscriptionRenewedAction': 'Subscription renewed',
+      'subscriptionCreatedAction': 'Subscription created',
+      'userPromotedToEmployeeAction': 'User promoted to Employee',
+      'userRevertedToNormalAction': 'User reverted to normal user',
       'workspace': 'Workspace',
       'workspacesTitle': 'Workspaces',
       'basicSection': 'Basic',
       'managementSection': 'Management',
+      'administrationSection': 'Administration',
       'switchWorkspace': 'Switch Workspace',
       'createAcademy': 'Create Academy',
       'academyName': 'Academy Name',
       'academyType': 'Academy Type',
       'sport': 'Sport',
       'logo': 'Academy Logo',
+      'logoImageUrlLabel': 'Logo Image URL',
+      'addressLabel': 'Address',
+      'noAcademySelected': 'No Academy Selected',
       'branchesAndGroups': 'Branches & Groups',
       'profile': 'Profile',
-      'invitations': 'Invitations',
-      'pendingInvitationsTitle': 'Pending Invitations',
       'players': 'Players',
       'publicPlayersList': 'Public Players List',
       'manageAllPlayersTitle': 'Manage All Players',
@@ -50,8 +133,6 @@ class AppLocalizations {
       'aboutAppPlaceholderDesc': 'Privacy Policy & Terms & Conditions',
       'noBranchesYet': 'No branches yet',
       'addBranch': 'Add Branch',
-      'noPendingInvitations': 'No pending invitations',
-      'inviteUser': 'Invite User',
       'noPlayersRegistered': 'No players registered',
       'addPlayer': 'Add Player',
       'searchPlayers': 'Search players...',
@@ -60,6 +141,8 @@ class AppLocalizations {
       'upgrade': 'Upgrade',
       'normalUser': 'Normal User',
       'administrator': 'Administrator / Manager',
+      'roleAdmin': 'Manager',
+      'roleNormalUser': 'Normal User',
       'saveChanges': 'Save Changes',
       'editProfile': 'Edit Profile',
       'changePassword': 'Change Password',
@@ -92,7 +175,7 @@ class AppLocalizations {
       'absent': 'Absent',
       'late': 'Late',
       'leave': 'On Leave',
-      // Players screen
+
       'manageSubscribersAndSports': 'Manage Subscribers & Sports',
       'noSubscribersYet': 'No subscribers yet',
       'expiresOn': 'Expires on',
@@ -103,7 +186,7 @@ class AppLocalizations {
       'subscriptionAmount': 'Subscription Amount',
       'addAndSave': 'Add & Save',
       'general': 'General',
-      // Expenses screen
+
       'financeAndExpensesManagement': 'Finance & Expenses Management',
       'income': 'Income',
       'expenses': 'Expenses',
@@ -115,7 +198,7 @@ class AppLocalizations {
       'incomeType': 'Income',
       'expenseType': 'Expense',
       'save': 'Save',
-      // Profile screen
+
       'fullName': 'Full Name',
       'phoneNumber': 'Phone Number',
       'nameRequired': 'Name is required',
@@ -136,14 +219,14 @@ class AppLocalizations {
       'sportTennis': 'Tennis',
       'sportOther': 'Other',
       'notLoggedIn': 'Not logged in',
-      // Workspace switcher
+
       'noAcademyNameYet': 'No academy name yet',
       'chooseWorkspace': 'Choose a workspace',
       'noOtherAccountsOnDevice': 'No other accounts registered on this device',
       'switchedTo': 'Switched to',
       'projectManager': 'Project Manager',
       'member': 'Member',
-      // Auth screens
+
       'welcomeBack': 'Welcome Back',
       'loginSubtitle': 'Log in to manage your sports academy',
       'emailLabel': 'Email',
@@ -184,7 +267,7 @@ class AppLocalizations {
       'managerAccessCodeHint': 'Enter the manager activation code',
       'managerCodeRequired': 'Please enter the manager activation code',
       'managerRoleHint': "Ask your academy admin for this code if you don't have it",
-      // Branches
+
       'addBranchTitle': 'Add New Branch',
       'branchName': 'Branch Name',
       'branchNameRequired': 'Branch name is required',
@@ -192,7 +275,7 @@ class AppLocalizations {
       'branchAdded': 'Branch added successfully',
       'deleteBranchConfirm': 'Delete this branch?',
       'managersOnlyHint': 'Only the academy manager can add branches',
-      // Packages screen
+
       'choosePackageHeading': 'Choose Academy Package',
       'choosePackageSubheading': 'Several options to fit your needs',
       'current': 'Current',
@@ -212,7 +295,7 @@ class AppLocalizations {
       'upTo200ReportsMonthly': 'Up to 200 Reports monthly',
       'prioritySupport': 'Priority Support',
       'comingSoonFeature': 'Coming soon',
-      // About app content
+
       'aboutAppBody': 'Sports Academy Management System helps academy owners and coaches manage branches, players, subscriptions, finances and staff from one place — simply and efficiently.',
       'ourFeatures': 'Features',
       'featureBranches': 'Manage multiple branches and groups',
@@ -221,7 +304,7 @@ class AppLocalizations {
       'featureAttendance': 'QR-code based attendance check-in',
       'featureTeam': 'Manage staff roles and permissions',
       'developedBy': 'Developed with care for sports academies',
-      // Players search / sort / attendance
+
       'searchByPlayerName': 'Search for a player',
       'sortByName': 'Sort by Name',
       'printList': 'Print List',
@@ -238,7 +321,7 @@ class AppLocalizations {
       'codeNotRecognized': 'Code not recognized — this player is not registered',
       'manualCodeEntry': 'Or enter the code manually',
       'submitCode': 'Submit',
-      // Role selection at registration
+
       'accountType': 'Account Type',
       'roleManager': 'Manager',
       'roleEmployee': 'Employee',
@@ -246,7 +329,7 @@ class AppLocalizations {
       'roleManagerDesc': 'Full access + records employee attendance',
       'roleEmployeeDesc': 'Normal access + can scan trainee attendance',
       'roleCoachDesc': 'Normal access',
-      // Employee attendance (recorded by manager)
+
       'employeeAttendanceTitle': 'Employee Attendance',
       'scanEmployeeAttendance': 'Scan Employee Attendance',
       'noEmployeesRegisteredYet': 'No employees registered yet',
@@ -256,7 +339,7 @@ class AppLocalizations {
       'employeeNotRecognized': 'Code not recognized — this employee is not registered',
       'myQrCode': 'My QR Code',
       'myQrCodeHint': 'Show this code to be checked in',
-      // About / contact / legal
+
       'editContactNumber': 'Edit Contact Number',
       'contactNumberLabel': 'Contact Number',
       'contactNumberSaved': 'Contact number updated',
@@ -273,26 +356,19 @@ class AppLocalizations {
       'privateProfileSubtitle': 'Only affects other players. Your manager and staff can always see your profile normally.',
       'privateProfileUpdateFailed': 'Could not update privacy setting, please try again',
       'profileIsPrivateMessage': 'This player has set their profile to private',
-      // Invitations
-      'sendInvitationTitle': 'Send Invitation',
-      'invitationEmailHint': "Invitee's email address",
-      'inviteeRoleLabel': 'Invitee Role',
-      'invitationSentSuccess': 'Invitation sent successfully',
-      'invitationsManagersOnlyHint': 'Only the academy manager can send invitations',
-      'invitedAsHint': 'This email is invited to join as',
       'sentOnLabel': 'Sent on',
-      // Auth error messages
+
       'enterValidEmail': 'Please enter a valid email',
       'noAccountWithEmail': 'No account is registered with this email',
       'incorrectPassword': 'Incorrect password',
       'emailAlreadyRegistered': 'This email is already registered, try logging in',
       'invalidManagerCode': 'Invalid manager activation code',
       'incorrectCurrentPassword': 'Current password is incorrect',
-      // Manager subscription management
+
       'manageSubscriptionsTitle': 'Manage Subscriptions',
       'manageSubscriptionsDesc': 'Search a user by email and create or review their subscription',
-      'searchUserByEmailLabel': 'Search User by Email',
-      'searchUserByEmailHint': 'user@gmail.com',
+      'searchUserByEmailLabel': 'Search User by ID or Email',
+      'searchUserByEmailHint': 'ID or user@gmail.com',
       'searchButton': 'Search',
       'userNotFoundMsg': 'No user found with this email',
       'selectedUserLabel': 'Selected User',
@@ -336,6 +412,8 @@ class AppLocalizations {
       'searchUsersHint': 'Search by name, email, or phone',
       'noUsersFound': 'No users found',
       'totalRevenueLabel': 'Total Revenue',
+      'monthlyRevenueLabel': 'Revenue by Month',
+      'transactionsCountLabel': '{count} transactions',
       'revenueByCategoryLabel': 'Revenue by Category',
       'revenueTransactionsLabel': 'Revenue Transactions',
       'nationalIdLabel': 'National ID',
@@ -365,20 +443,102 @@ class AppLocalizations {
     },
     'ar': {
       'appName': 'نظام إدارة الأكاديميات الرياضية',
+
+      'sendMessageNotifTitle': 'إرسال رسالة / إشعار',
+      'specificUserChip': 'مستخدم محدد',
+      'broadcastAllChip': 'إعلان للجميع',
+      'recipientEmailLabel': 'البريد الإلكتروني للمستلم',
+      'messageTitleLabel': 'عنوان الرسالة',
+      'messageBodyLabel': 'نص الرسالة',
+      'pleaseEnterTitleAndBody': 'يرجى كتابة العنوان ونص الرسالة',
+      'academyManagementLabel': 'الإدارة',
+      'notificationSentSuccess': 'تم إرسال الإشعار بنجاح',
+      'enterValidEmailMsg': 'يرجى إدخال بريد إلكتروني صحيح',
+      'noAccountWithEmailMsg': 'لا يوجد حساب مسجل بهذا البريد الإلكتروني',
+      'sendErrorPrefix': 'حدث خطأ أثناء الإرسال',
+      'sendButton': 'إرسال',
+      'notificationsAndMessagesTitle': 'الإشعارات والرسائل',
+      'markAllAsReadLabel': 'تحديد الكل كمقروء',
+      'sendNotificationToUsersLabel': 'إرسال إشعار للمستخدمين',
+      'noNotificationsCurrently': 'لا توجد إشعارات حالياً',
+      'academyNotificationDefaultTitle': 'إشعار من الأكاديمية',
+      'announcementLabel': 'إعلان',
+      'fromLabel': 'من',
+      'dateLabel': 'التاريخ',
+      'senderLabel': 'المرسل',
+      'notificationsLabel': 'الإشعارات',
+      'emailVerifiedSuccessMsg': 'تم التحقق من البريد الإلكتروني بنجاح!',
+      'emailNotVerifiedYetMsg': 'لم يتم توثيق البريد بعد، يرجى الضغط على الرابط المرسل في بريدك الإلكتروني.',
+
+      'duration1Month': 'شهر واحد',
+      'duration3Months': '3 أشهر',
+      'duration6Months': '6 أشهر',
+      'duration1Year': 'سنة كاملة',
+      'pleaseSearchUserFirst': 'يرجى البحث عن مستخدم أولاً',
+      'pleaseEnterValidAmount': 'يرجى إدخال مبلغ دفع صحيح',
+      'subscriptionAddedSuccessFor': 'تم إضافة وتفعيل الاشتراك بنجاح للمستخدم',
+      'subscriptionAddFailed': 'فشل إضافة الاشتراك، يرجى المحاولة مرة أخرى',
+      'managerOnlyPageMsg': 'عذراً، هذه الصفحة مخصصة لمدير الأكاديمية فقط — إدارة الاشتراكات.',
+      'manageSubscriptionsHeading': 'إدارة الاشتراكات وإضافة الاشتراكات للمستخدمين',
+      'manageSubscriptionsSubtitle': 'ابحث عن المستخدم بالبريد الإلكتروني وأضف له اشتراكاً مخصصاً بالمدة والمبلغ المحدد.',
+      'step1SearchUserByEmail': '1. البحث عن المستخدم بالمعرّف أو البريد الإلكتروني',
+      'enterEmailHint': 'أدخل المعرّف أو البريد الإلكتروني (مثال: user@gmail.com)',
+      'searchButtonLabel': 'بحث',
+      'activeStatusLabel': 'نشط',
+      'expiredNotSubscribedLabel': 'منتهي / غير مشترك',
+      'step2NewSubscriptionDetails': '2. تفاصيل الاشتراك الجديد للمستخدم',
+      'subscriptionDurationLabel': 'مدة الاشتراك',
+      'amountPaidEgpLabel': 'المبلغ المدفوع (جنيه)',
+      'enterAmountHint': 'أدخل المبلغ المطلوب (مثال: 500 أو 1200)',
+      'startDateLabel': 'تاريخ البداية',
+      'autoExpiryDateLabel': 'تاريخ الانتهاء التلقائي',
+      'saveAndActivateSubscription': 'حفظ وتفعيل الاشتراك للمستخدم',
+      'previousSubscriptionsHistory': 'سجل الاشتراكات السابقة للمستخدم',
+      'toLabel': 'إلى',
+
+      'academyNameLabel': 'اسم الأكاديمية',
+      'newAcademyChip': 'أكاديمية جديدة',
+      'existingAcademyChip': 'أكاديمية موجودة',
+      'chooseAcademyFromListHint': 'اختر الأكاديمية من القائمة',
+      'enterAcademyNameHint': 'أدخل اسم الأكاديمية',
+      'pleaseEnterAcademyName': 'يرجى إدخال اسم الأكاديمية',
+      'pleaseSelectAcademy': 'يرجى اختيار الأكاديمية',
+      'phoneNumberLabel': 'رقم الهاتف',
+
+      'attendanceCodeLabel': 'كود الحضور',
+      'subscriptionIdLabel': 'معرّف الاشتراك',
+      'userIdLabel': 'معرّف المستخدم',
+      'employeeAttendanceCodeLabel': 'كود حضور الموظف',
+      'employeeIdLabel': 'معرّف الموظف',
+      'personalAttendanceCodeHint': 'كود الحضور الشخصي (6 أرقام)',
+      'playerAttendanceCodeLabel': 'كود حضور اللاعب',
+      'footballSportLabel': 'كرة القدم',
+      'egpCurrencyAbbrev': 'ج.م',
+      'cameraOpenErrorPrefix': 'خطأ في فتح الكاميرا:',
+      'retryOpenCamera': 'إعادة محاولة فتح الكاميرا',
+      'subscriptionRenewedPrefix': 'تجديد اشتراك',
+      'subscriptionPrefix': 'اشتراك',
+      'subscriptionsCategoryLabel': 'اشتراكات',
+      'subscriptionRenewedAction': 'تجديد اشتراك',
+      'subscriptionCreatedAction': 'إنشاء اشتراك',
+      'userPromotedToEmployeeAction': 'تمت ترقية المستخدم إلى موظف',
+      'userRevertedToNormalAction': 'تمت إعادة المستخدم إلى مستخدم عادي',
       'workspace': 'مساحة العمل',
       'workspacesTitle': 'مساحات العمل',
       'basicSection': 'الأساسية',
       'managementSection': 'الإدارة',
+      'administrationSection': 'الإدارة',
       'switchWorkspace': 'تبديل مساحة العمل',
       'createAcademy': 'إنشاء أكاديمية جديدة',
+      'logoImageUrlLabel': 'رابط صورة الشعار',
+      'addressLabel': 'العنوان',
+      'noAcademySelected': 'لا توجد أكاديمية محددة',
       'academyName': 'اسم الأكاديمية',
       'academyType': 'نوع الأكاديمية',
       'sport': 'الرياضة',
       'logo': 'شعار الأكاديمية',
       'branchesAndGroups': 'الفروع والمجموعات',
       'profile': 'الملف الشخصي',
-      'invitations': 'الدعوات',
-      'pendingInvitationsTitle': 'الدعوات المعلقة',
       'players': 'اللاعبون',
       'publicPlayersList': 'قائمة اللاعبين العامة',
       'manageAllPlayersTitle': 'إدارة جميع اللاعبين',
@@ -402,8 +562,6 @@ class AppLocalizations {
       'aboutAppPlaceholderDesc': 'سياسة الخصوصية والشروط والأحكام',
       'noBranchesYet': 'لا توجد فروع بعد',
       'addBranch': 'إضافة فرع',
-      'noPendingInvitations': 'لا توجد دعوات معلقة',
-      'inviteUser': 'دعوة مستخدم',
       'noPlayersRegistered': 'لا يوجد لاعبون مسجلون',
       'addPlayer': 'إضافة لاعب',
       'searchPlayers': 'البحث عن لاعبين...',
@@ -412,6 +570,8 @@ class AppLocalizations {
       'upgrade': 'ترقية',
       'normalUser': 'مستخدم عادي',
       'administrator': 'مدير / مسؤول',
+      'roleAdmin': 'مانيجر',
+      'roleNormalUser': 'مستخدم عادي',
       'saveChanges': 'حفظ التغييرات',
       'editProfile': 'تعديل الملف الشخصي',
       'changePassword': 'تغيير كلمة المرور',
@@ -444,7 +604,7 @@ class AppLocalizations {
       'absent': 'غائب',
       'late': 'متأخر',
       'leave': 'إجازة',
-      // شاشة اللاعبين
+
       'manageSubscribersAndSports': 'إدارة المشتركين والرياضات',
       'noSubscribersYet': 'لا يوجد مشتركون حالياً',
       'expiresOn': 'ينتهي في',
@@ -455,7 +615,7 @@ class AppLocalizations {
       'subscriptionAmount': 'قيمة الاشتراك',
       'addAndSave': 'إضافة وحفظ',
       'general': 'عام',
-      // شاشة المصروفات
+
       'financeAndExpensesManagement': 'إدارة المالية والمصروفات',
       'income': 'الإيرادات',
       'expenses': 'المصروفات',
@@ -467,7 +627,7 @@ class AppLocalizations {
       'incomeType': 'إيراد',
       'expenseType': 'مصروف',
       'save': 'حفظ',
-      // شاشة الملف الشخصي
+
       'fullName': 'الاسم بالكامل',
       'phoneNumber': 'رقم الهاتف',
       'nameRequired': 'الاسم مطلوب',
@@ -488,14 +648,14 @@ class AppLocalizations {
       'sportTennis': 'التنس',
       'sportOther': 'أخرى',
       'notLoggedIn': 'غير مسجل دخول',
-      // تبديل مساحة العمل
+
       'noAcademyNameYet': 'لا يوجد اسم أكاديمية بعد',
       'chooseWorkspace': 'اختر مساحة العمل',
       'noOtherAccountsOnDevice': 'لا توجد حسابات أخرى مسجّلة على هذا الجهاز',
       'switchedTo': 'تم التبديل إلى',
       'projectManager': 'مدير مشروع',
       'member': 'عضو',
-      // شاشات الدخول والتسجيل
+
       'welcomeBack': 'مرحباً بعودتك',
       'loginSubtitle': 'سجّل الدخول لإدارة أكاديميتك الرياضية',
       'emailLabel': 'البريد الإلكتروني',
@@ -536,7 +696,7 @@ class AppLocalizations {
       'managerAccessCodeHint': 'أدخل كود تفعيل المدير',
       'managerCodeRequired': 'يرجى إدخال كود تفعيل المدير',
       'managerRoleHint': 'اسأل مسؤول الأكاديمية عن الكود لو مش موجود عندك',
-      // الفروع
+
       'addBranchTitle': 'إضافة فرع جديد',
       'branchName': 'اسم الفرع',
       'branchNameRequired': 'اسم الفرع مطلوب',
@@ -544,7 +704,7 @@ class AppLocalizations {
       'branchAdded': 'تمت إضافة الفرع بنجاح',
       'deleteBranchConfirm': 'حذف هذا الفرع؟',
       'managersOnlyHint': 'إضافة الفروع متاحة فقط لمدير الأكاديمية',
-      // شاشة الباقات
+
       'choosePackageHeading': 'اختر باقة الأكاديمية',
       'choosePackageSubheading': 'نوفر عدة خيارات تناسب احتياجاتك',
       'current': 'الحالي',
@@ -564,7 +724,7 @@ class AppLocalizations {
       'upTo200ReportsMonthly': 'حتى 200 تقرير شهريًا',
       'prioritySupport': 'دعم فني ذو أولوية',
       'comingSoonFeature': 'قريباً',
-      // محتوى حول التطبيق
+
       'aboutAppBody': 'نظام إدارة الأكاديميات الرياضية بيساعد أصحاب الأكاديميات والمدربين يديروا الفروع واللاعبين والاشتراكات والمالية والموظفين من مكان واحد، ببساطة وكفاءة.',
       'ourFeatures': 'مميزات التطبيق',
       'featureBranches': 'إدارة عدة فروع ومجموعات',
@@ -573,7 +733,7 @@ class AppLocalizations {
       'featureAttendance': 'تسجيل حضور اللاعبين عن طريق كود QR',
       'featureTeam': 'إدارة أدوار وصلاحيات فريق العمل',
       'developedBy': 'تم تطويره باهتمام خاص للأكاديميات الرياضية',
-      // بحث وترتيب وحضور اللاعبين
+
       'searchByPlayerName': 'ابحث عن لاعب',
       'sortByName': 'ترتيب بالاسم',
       'printList': 'طباعة القائمة',
@@ -590,7 +750,7 @@ class AppLocalizations {
       'codeNotRecognized': 'الكود غير معروف — هذا اللاعب غير مسجل',
       'manualCodeEntry': 'أو أدخل الكود يدوياً',
       'submitCode': 'إرسال',
-      // اختيار الدور عند التسجيل
+
       'accountType': 'نوع الحساب',
       'roleManager': 'مانيجر',
       'roleEmployee': 'موظف',
@@ -598,7 +758,7 @@ class AppLocalizations {
       'roleManagerDesc': 'كل الصلاحيات + تسجيل حضور الموظفين',
       'roleEmployeeDesc': 'صلاحيات عادية + تسجيل حضور المتدربين',
       'roleCoachDesc': 'صلاحيات عادية',
-      // حضور الموظفين (يسجّله المدير)
+
       'employeeAttendanceTitle': 'حضور الموظفين',
       'scanEmployeeAttendance': 'تسجيل حضور موظف',
       'noEmployeesRegisteredYet': 'لا يوجد موظفون مسجلون بعد',
@@ -608,7 +768,7 @@ class AppLocalizations {
       'employeeNotRecognized': 'الكود غير معروف — هذا الموظف غير مسجل',
       'myQrCode': 'كود QR الخاص بي',
       'myQrCodeHint': 'اعرض هذا الكود عشان يتسجل حضورك',
-      // حول التطبيق / التواصل / القانوني
+
       'editContactNumber': 'تعديل رقم التواصل',
       'contactNumberLabel': 'رقم التواصل',
       'contactNumberSaved': 'تم تحديث رقم التواصل',
@@ -625,26 +785,20 @@ class AppLocalizations {
       'privateProfileSubtitle': 'الإعداد ده بيأثر بس على باقي البلايرز. المانيجر والموظفين شايفين بروفايلك عادي دايمًا.',
       'privateProfileUpdateFailed': 'حصلت مشكلة في تحديث إعداد الخصوصية، حاول تاني',
       'profileIsPrivateMessage': 'اللاعب ده خلي بروفايله خاص',
-      // الدعوات
-      'sendInvitationTitle': 'إرسال دعوة',
-      'invitationEmailHint': 'البريد الإلكتروني الخاص بالمدعو',
-      'inviteeRoleLabel': 'دور المدعو',
-      'invitationSentSuccess': 'تم إرسال الدعوة بنجاح',
-      'invitationsManagersOnlyHint': 'إرسال الدعوات متاح فقط لمدير الأكاديمية',
-      'invitedAsHint': 'هذا البريد مدعو للانضمام كـ',
+
       'sentOnLabel': 'تم الإرسال في',
-      // رسائل خطأ الدخول/التسجيل
+
       'enterValidEmail': 'يرجى إدخال بريد إلكتروني صحيح',
       'noAccountWithEmail': 'لا يوجد حساب مسجّل بهذا البريد الإلكتروني',
       'incorrectPassword': 'كلمة المرور غير صحيحة',
       'emailAlreadyRegistered': 'هذا البريد الإلكتروني مسجّل بالفعل، جرّب تسجيل الدخول',
       'invalidManagerCode': 'كود تفعيل المدير غير صحيح',
       'incorrectCurrentPassword': 'كلمة المرور الحالية غير صحيحة',
-      // إدارة الاشتراكات (المدير)
+
       'manageSubscriptionsTitle': 'إدارة الاشتراكات',
       'manageSubscriptionsDesc': 'ابحث عن مستخدم بالبريد الإلكتروني لإنشاء أو مراجعة اشتراكه',
-      'searchUserByEmailLabel': 'البحث عن مستخدم بالبريد الإلكتروني',
-      'searchUserByEmailHint': 'user@gmail.com',
+      'searchUserByEmailLabel': 'البحث عن مستخدم بالمعرّف أو البريد الإلكتروني',
+      'searchUserByEmailHint': 'المعرّف أو user@gmail.com',
       'searchButton': 'بحث',
       'userNotFoundMsg': 'لا يوجد مستخدم بهذا البريد الإلكتروني',
       'selectedUserLabel': 'المستخدم المحدد',
@@ -688,6 +842,8 @@ class AppLocalizations {
       'searchUsersHint': 'ابحث بالاسم أو البريد الإلكتروني أو الهاتف',
       'noUsersFound': 'لا يوجد مستخدمون',
       'totalRevenueLabel': 'إجمالي الإيرادات',
+      'monthlyRevenueLabel': 'الإيرادات حسب الشهر',
+      'transactionsCountLabel': '{count} حركة',
       'revenueByCategoryLabel': 'الإيرادات حسب الفئة',
       'revenueTransactionsLabel': 'حركات الإيرادات',
       'nationalIdLabel': 'الرقم القومي',
@@ -719,6 +875,86 @@ class AppLocalizations {
 
   String translate(String key) {
     return _localizedValues[locale.languageCode]?[key] ?? _localizedValues['en']?[key] ?? key;
+  }
+
+
+
+
+
+
+  String localizeStoredDuration(String value) {
+    var result = value;
+    final replacements = <String, String>{
+      '1 Month': translate('duration1Month'),
+      '3 Months': translate('duration3Months'),
+      '6 Months': translate('duration6Months'),
+      '1 Year': translate('duration1Year'),
+      'شهر واحد': translate('duration1Month'),
+      '3 أشهر': translate('duration3Months'),
+      '6 أشهر': translate('duration6Months'),
+      'سنة كاملة': translate('duration1Year'),
+      'سنة واحدة': translate('duration1Year'),
+    };
+
+
+
+    final ordered = replacements.entries.toList()
+      ..sort((a, b) => b.key.length.compareTo(a.key.length));
+    for (final entry in ordered) {
+      result = result.replaceAll(entry.key, entry.value);
+    }
+    return result;
+  }
+
+  String localizeStoredActivityAction(String value) {
+    switch (value.trim()) {
+      case 'Subscription renewed':
+      case 'تجديد اشتراك':
+        return translate('subscriptionRenewedAction');
+      case 'Subscription created':
+      case 'إنشاء اشتراك':
+        return translate('subscriptionCreatedAction');
+      case 'User promoted to Employee':
+      case 'تمت ترقية المستخدم إلى موظف':
+        return translate('userPromotedToEmployeeAction');
+      case 'User reverted to normal user':
+      case 'تمت إعادة المستخدم إلى مستخدم عادي':
+        return translate('userRevertedToNormalAction');
+      default:
+        return value;
+    }
+  }
+
+  String localizeStoredActivityDetails(String value) {
+    return localizeStoredDuration(value);
+  }
+
+  String localizeStoredTransactionTitle(String value) {
+    var result = value;
+    final prefixes = <String, String>{
+      'Subscription renewed:': '${translate('subscriptionRenewedPrefix')}:',
+      'تجديد اشتراك:': '${translate('subscriptionRenewedPrefix')}:',
+      'Subscription:': '${translate('subscriptionPrefix')}:',
+      'اشتراك:': '${translate('subscriptionPrefix')}:',
+    };
+
+    for (final entry in prefixes.entries) {
+      if (result.startsWith(entry.key)) {
+        result = '${entry.value}${result.substring(entry.key.length)}';
+        break;
+      }
+    }
+    return localizeStoredDuration(result);
+  }
+
+  String localizeStoredCategory(String value) {
+    switch (value.trim()) {
+      case 'Subscriptions':
+      case 'اشتراكات':
+        return translate('subscriptionsCategoryLabel');
+      default:
+        return value;
+    }
   }
 }
 

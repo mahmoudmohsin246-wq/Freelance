@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-/// Attendance is stored on Firestore in the `attendance` collection.
-/// Each document represents one person's check-in for one day and its id is
-/// `{personId}_{yyyy-MM-dd}` so a duplicate check-in on the same day simply
-/// overwrites the same document instead of creating a new one.
+
+
+
+
 class AttendanceProvider extends ChangeNotifier {
   static const String _collection = 'attendance';
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,12 +12,12 @@ class AttendanceProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  /// personId -> set of dateKeys (yyyy-MM-dd) the person was present on.
+
   final Map<String, Set<String>> _presentDatesByPerson = {};
 
-  /// personId -> cached display info (name/email/phone/nationalId/type),
-  /// filled in as attendance is loaded/recorded so screens can show it
-  /// without an extra round trip.
+
+
+
   final Map<String, Map<String, String>> _personInfo = {};
 
   String _dateKey(DateTime d) =>
@@ -25,8 +25,8 @@ class AttendanceProvider extends ChangeNotifier {
 
   String _todayKey() => _dateKey(DateTime.now());
 
-  /// Loads every attendance record for the given academy so the UI can show
-  /// "checked in today" / total counts without a query per list item.
+
+
   Future<void> loadAcademyAttendance(String academyName) async {
     if (academyName.trim().isEmpty) return;
     _isLoading = true;
@@ -94,8 +94,8 @@ class AttendanceProvider extends ChangeNotifier {
     }
   }
 
-  /// Records a player/trainee's attendance for today. Returns false if they
-  /// were already checked in today (or on error).
+
+
   Future<bool> recordAttendance({
     required String personId,
     required String personName,
@@ -110,8 +110,8 @@ class AttendanceProvider extends ChangeNotifier {
         academyName: academyName,
       );
 
-  /// Records an employee's attendance for today. Returns false if they were
-  /// already checked in today (or on error).
+
+
   Future<bool> recordEmployeeAttendance({
     required String employeeId,
     required String employeeName,
@@ -135,16 +135,16 @@ class AttendanceProvider extends ChangeNotifier {
 
   int employeeAttendanceCount(String employeeId) => attendanceCount(employeeId);
 
-  /// The set of dateKeys (yyyy-MM-dd) a person was present on, from the
-  /// currently loaded academy cache (may be empty before [loadAcademyAttendance]
-  /// or [fetchPersonAttendanceDates] has run).
+
+
+
   Set<String> presentDatesFor(String personId) =>
       _presentDatesByPerson[personId] ?? <String>{};
 
-  /// Fetches (and caches) the full attendance history of a single person
-  /// directly from Firestore. Useful for the manager's per-person calendar
-  /// screen, which needs the complete history regardless of what's already
-  /// been loaded for the academy list screens.
+
+
+
+
   Future<Set<String>> fetchPersonAttendanceDates(String personId) async {
     if (personId.trim().isEmpty) return <String>{};
     try {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color scaffoldBg = Color(0xFF0F172A); // Dark Navy Background
-  static const Color drawerBg = Color(0xFF111827);   // Dark Sidebar Background
-  static const Color cardBg = Color(0xFF1E293B);     // Card Background
-  static const Color primaryBlue = Color(0xFF38BDF8); // Bright Light Blue
-  static const Color accentGreen = Color(0xFF10B981); // Emerald Green
-  static const Color textColor = Color(0xFFF8FAFC);    // Off-white text
-  static const Color subTextColor = Color(0xFF94A3B8); // Grayish subtitle
+  static const Color scaffoldBg = Color(0xFF0F172A);
+  static const Color drawerBg = Color(0xFF111827);
+  static const Color cardBg = Color(0xFF1E293B);
+  static const Color primaryBlue = Color(0xFF38BDF8);
+  static const Color accentGreen = Color(0xFF10B981);
+  static const Color textColor = Color(0xFFF8FAFC);
+  static const Color subTextColor = Color(0xFF94A3B8);
 
 
   static const Color lightScaffoldBg = Color(0xFFF4F7FB);

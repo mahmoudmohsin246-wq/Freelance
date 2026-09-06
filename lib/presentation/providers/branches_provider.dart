@@ -21,8 +21,8 @@ class SimpleBranch {
       );
 }
 
-/// Branches are shared academy data (added by the manager, seen by every
-/// employee/player), so this is backed by Firestore, not per-device storage.
+
+
 class BranchesProvider extends ChangeNotifier {
   static const _collection = 'branches';
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

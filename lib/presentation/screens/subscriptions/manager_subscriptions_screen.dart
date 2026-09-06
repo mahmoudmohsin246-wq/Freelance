@@ -9,10 +9,10 @@ import '../../providers/activity_log_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Manager/Admin-only screen for searching a user by email and creating a
-/// subscription for them (duration + manually entered amount paid). Expiry
-/// is calculated automatically and the subscription is linked by Firebase
-/// UID. Normal users never see this screen — see [MySubscriptionScreen].
+
+
+
+
 class ManagerSubscriptionsScreen extends StatefulWidget {
   const ManagerSubscriptionsScreen({super.key});
 
@@ -24,7 +24,7 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
   final _emailController = TextEditingController();
   final _amountController = TextEditingController();
 
-  // durationMonths -> label key
+
   final List<_DurationOption> _durations = const [
     _DurationOption(months: 1, key: 'duration1Month'),
     _DurationOption(months: 3, key: 'duration3Months'),
@@ -52,7 +52,7 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
   Future<void> _search(SubscriptionProvider subProv) async {
     FocusScope.of(context).unfocus();
     setState(() => _searched = true);
-    final user = await subProv.searchUserByEmail(_emailController.text);
+    final user = await subProv.searchUserByIdOrEmail(_emailController.text);
     if (user != null && mounted) {
       await subProv.fetchUserSubscriptions(user.id);
     }
@@ -85,8 +85,8 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
     final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
     final activityLogProvider = Provider.of<ActivityLogProvider>(context, listen: false);
     final authProv = Provider.of<AuthProvider>(context, listen: false);
-    // Share the same 6-digit code between the user's account and this
-    // subscription, so their code stays stable across renewals.
+
+
     final code = await authProv.ensureAttendanceCode(user);
     final ok = await subProv.addManagerSubscription(
       userId: user.id,
@@ -96,6 +96,7 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
       durationLabel: loc.translate(durationOption.key),
       amountPaid: amount,
       attendanceCode: code,
+      loc: loc,
       financialProvider: financialProvider,
       activityLogProvider: activityLogProvider,
       actingManager: authProv.currentUser,
@@ -135,7 +136,9 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
     if (ok) {
       final activityLogProvider = Provider.of<ActivityLogProvider>(context, listen: false);
       await activityLogProvider.logAction(
-        action: newRole == UserRole.employee ? 'User promoted to Employee' : 'User reverted to normal user',
+        action: newRole == UserRole.employee
+            ? loc.translate('userPromotedToEmployeeAction')
+            : loc.translate('userRevertedToNormalAction'),
         entityType: 'user',
         details: '${user.name} (${user.email})',
         userId: authProv.currentUser?.id ?? '',
@@ -154,7 +157,7 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
     );
 
     if (ok) {
-      await subProv.searchUserByEmail(user.email);
+      await subProv.searchUserByIdOrEmail(user.email);
     }
   }
 
@@ -165,8 +168,8 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final subProv = Provider.of<SubscriptionProvider>(context);
 
-    // Defense in depth: this screen is only routed to for managers, but
-    // guard here too in case of navigation misuse.
+
+
     if (!authProv.isManager) {
       return Center(
         child: Text(loc.translate('genericError'), style: TextStyle(color: colors.textColor)),
@@ -193,7 +196,7 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
                     style: TextStyle(color: colors.subTextColor, fontSize: 13)),
                 const SizedBox(height: 20),
 
-                // Search
+
                 Text(loc.translate('searchUserByEmailLabel'),
                     style: TextStyle(color: colors.textColor, fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 8),
@@ -287,7 +290,7 @@ class _ManagerSubscriptionsScreenState extends State<ManagerSubscriptionsScreen>
                   ),
                   const SizedBox(height: 20),
 
-                  // Role management: promote a normal user to Employee, or revert.
+
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

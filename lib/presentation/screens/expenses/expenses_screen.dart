@@ -35,21 +35,21 @@ class ExpensesScreen extends StatelessWidget {
                       _buildSummaryCard(
                         colors,
                         loc.translate('revenue'),
-                        '${financialProv.totalIncome.toStringAsFixed(2)} ج.م',
+                        '${financialProv.totalIncome.toStringAsFixed(2)} ${loc.translate('egpCurrencyAbbrev')}',
                         colors.accentGreen,
                       ),
                       const SizedBox(width: 8),
                       _buildSummaryCard(
                         colors,
                         loc.translate('expenses'),
-                        '${financialProv.totalExpenses.toStringAsFixed(2)} ج.م',
+                        '${financialProv.totalExpenses.toStringAsFixed(2)} ${loc.translate('egpCurrencyAbbrev')}',
                         Colors.redAccent,
                       ),
                       const SizedBox(width: 8),
                       _buildSummaryCard(
                         colors,
                         loc.translate('netBalance'),
-                        '${financialProv.netBalance.toStringAsFixed(2)} ج.م',
+                        '${financialProv.netBalance.toStringAsFixed(2)} ${loc.translate('egpCurrencyAbbrev')}',
                         financialProv.netBalance >= 0 ? colors.primaryBlue : Colors.orangeAccent,
                       ),
                     ],
@@ -85,9 +85,9 @@ class ExpensesScreen extends StatelessWidget {
                                     color: item.isIncome ? colors.accentGreen : Colors.redAccent,
                                   ),
                                 ),
-                                title: Text(item.title, style: TextStyle(color: colors.textColor)),
+                                title: Text(loc.localizeStoredTransactionTitle(item.title), style: TextStyle(color: colors.textColor)),
                                 subtitle: Text(
-                                  '${item.category} • ${DateFormat('yyyy/MM/dd').format(item.date)}',
+                                  '${loc.localizeStoredCategory(item.category)} • ${DateFormat('yyyy/MM/dd').format(item.date)}',
                                   style: TextStyle(color: colors.subTextColor, fontSize: 12),
                                 ),
                                 trailing: Row(

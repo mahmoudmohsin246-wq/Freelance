@@ -2,7 +2,7 @@ class EmployeeEntity {
   final String id;
   final String academyId;
   final String name;
-  final String role; // Head Coach, Trainer, Administrator, Manager, Receptionist
+  final String role;
   final String phone;
   final double baseSalary;
   final DateTime joinedDate;

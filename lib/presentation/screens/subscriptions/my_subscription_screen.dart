@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart'; // تم إضافة حزمة الـ QR
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../providers/subscription_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Read-only view of the signed-in user's subscription status and history.
-/// Subscriptions are entirely managed by the Manager/Admin — normal users
-/// cannot choose, purchase, or modify a plan here.
+
+
+
 class MySubscriptionScreen extends StatelessWidget {
   const MySubscriptionScreen({super.key});
 
@@ -60,7 +60,7 @@ class MySubscriptionScreen extends StatelessWidget {
                           ),
                         )
                       else ...[
-                        // 1. كارت الـ QR Code مع عرض الـ ID في الأعلى
+
                         Container(
                           padding: const EdgeInsets.all(20),
                           margin: const EdgeInsets.only(bottom: 16),
@@ -71,7 +71,7 @@ class MySubscriptionScreen extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-                              // عرض الـ ID بوضوح أعلى الـ QR Code
+
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
@@ -84,7 +84,7 @@ class MySubscriptionScreen extends StatelessWidget {
                                     Icon(Icons.badge_outlined, size: 18, color: colors.primaryColor),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'ID: ${active.attendanceCode.trim().isNotEmpty ? active.attendanceCode.trim() : active.id.trim()}',
+                                      '${loc.translate('attendanceCodeLabel')}: ${active.attendanceCode.trim().isNotEmpty ? active.attendanceCode.trim() : active.id.trim()}',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -96,7 +96,7 @@ class MySubscriptionScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              
+
                                FutureBuilder<List<String>>(
                                  future: Future.wait([
                                    subProv.ensureSubscriptionAttendanceCode(active),
@@ -127,7 +127,7 @@ class MySubscriptionScreen extends StatelessWidget {
                                        ),
                                        const SizedBox(height: 12),
                                        Text(
-                                         "كود الحضور (Attendance Code): $attCode",
+                                         "${loc.translate('attendanceCodeLabel')}: $attCode",
                                          style: TextStyle(
                                            fontSize: 13,
                                            fontWeight: FontWeight.bold,
@@ -137,7 +137,7 @@ class MySubscriptionScreen extends StatelessWidget {
                                        if (pubSubId.isNotEmpty) ...[
                                          const SizedBox(height: 4),
                                          Text(
-                                           "معرّف الاشتراك (Public Sub ID): $pubSubId",
+                                           "${loc.translate('subscriptionIdLabel')}: $pubSubId",
                                            style: TextStyle(
                                              fontSize: 11,
                                              color: colors.subTextColor,
@@ -152,7 +152,7 @@ class MySubscriptionScreen extends StatelessWidget {
                            ),
                          ),
 
-                         // 2. كارت تفاصيل الاشتراك الحالي
+
                          Container(
                            padding: const EdgeInsets.all(18),
                            decoration: BoxDecoration(

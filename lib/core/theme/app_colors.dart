@@ -12,22 +12,22 @@ class AppColors {
     return AppColors(isDark);
   }
 
-  // ألوان ثابتة (Static) ليقرأها ملف AppTheme بدون BuildContext
-  static const Color primary = Color(0xFF10B981);       // أخضر عشبي أساسي
-  static const Color primaryLight = Color(0xFF34D399);  // أخضر نيون مضيء
-  static const Color accent = Color(0xFF34D399);       // اللون المساعد
-  static const Color danger = Color(0xFFEF4444);       // لون الأخطاء والإنذارات
 
-  static const Color bgLight = Color(0xFFFFFFFF);      // خلفية الفاتح الأساسية
-  static const Color cardLight = Color(0xFFF4F6F4);    // خلفية كروت الفاتح
-  static const Color borderLight = Color(0xFFE5E7EB);  // حدود الفاتح
+  static const Color primary = Color(0xFF10B981);
+  static const Color primaryLight = Color(0xFF34D399);
+  static const Color accent = Color(0xFF34D399);
+  static const Color danger = Color(0xFFEF4444);
 
-  static const Color bgDark = Color(0xFF121212);       // خلفية الداكن الأساسية
-  static const Color cardDark = Color(0xFF1E1E1E);     // خلفية كروت الداكن
-  static const Color borderDark = Color(0xFF2D2D2D);   // حدود الداكن
+  static const Color bgLight = Color(0xFFFFFFFF);
+  static const Color cardLight = Color(0xFFF4F6F4);
+  static const Color borderLight = Color(0xFFE5E7EB);
 
-  // ألوان ديناميكية (Getters) تم ربطها بالأسماء القديمة لضمان عدم حدوث خطأ في الشاشات
-  Color get primaryBlue => isDark ? primaryLight : primary; // تم ربط الاسم القديم بالأخضر الجديد
+  static const Color bgDark = Color(0xFF121212);
+  static const Color cardDark = Color(0xFF1E1E1E);
+  static const Color borderDark = Color(0xFF2D2D2D);
+
+
+  Color get primaryBlue => isDark ? primaryLight : primary;
   Color get scaffoldBg => isDark ? bgDark : bgLight;
   Color get drawerBg => isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFFFFFF);
   Color get cardBg => isDark ? cardDark : cardLight;

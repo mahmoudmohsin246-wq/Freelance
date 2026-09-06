@@ -1,14 +1,43 @@
-// Subscription service helper for extending subscriptions
 
-import 'package:your_app/models/user.dart';
-import 'package:your_app/models/plan.dart';
+
+
+
+
+
+
+
+
+class SubscriptionPlan {
+  final String id;
+  final int durationDays;
+
+  const SubscriptionPlan({required this.id, required this.durationDays});
+}
+
+class SubscriptionUser {
+  final String id;
+  DateTime? subscriptionStart;
+  DateTime? subscriptionExpiry;
+  String? planId;
+
+  SubscriptionUser({
+    required this.id,
+    this.subscriptionStart,
+    this.subscriptionExpiry,
+    this.planId,
+  });
+
+
+
+  Future<void> save() async {}
+}
 
 class SubscriptionService {
-  /// Apply subscription extension: if user has an active subscription, start
-  /// the new period right after current expiry; otherwise start from nowUtc.
+
+
   Future<DateTime> applySubscriptionExtension({
-    required User user,
-    required Plan plan,
+    required SubscriptionUser user,
+    required SubscriptionPlan plan,
     required DateTime nowUtc,
   }) async {
     final currentExpiry = user.subscriptionExpiry;

@@ -5,7 +5,7 @@ class ExpenseEntity {
   final double amount;
   final DateTime date;
   final String description;
-  final String category; // Rent, Equipment, Utilities, Maintenance, Marketing
+  final String category;
   final String notes;
 
   ExpenseEntity({

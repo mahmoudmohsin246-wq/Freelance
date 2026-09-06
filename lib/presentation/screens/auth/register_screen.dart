@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../common_widgets/academy_picker_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -25,13 +26,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nationalIdController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   XFile? _pickedAvatar;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _roleChoice = 'coach'; // 'manager' | 'employee' | 'coach'
+  String _roleChoice = 'coach';
   bool _obscureManagerCode = true;
   final _managerCodeController = TextEditingController();
+
+
+
+
+  String _academyMode = 'new';
+  String? _pickerError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Provider.of<AuthProvider>(context, listen: false).fetchAcademyNames();
+      }
+    });
+  }
 
   late AppColors _colors;
   Color get scaffoldBg => _colors.scaffoldBg;
@@ -56,6 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _pickAvatar() async {
+    final loc = AppLocalizations.of(context);
     final picker = ImagePicker();
     showModalBottomSheet(
       context: context,
@@ -68,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             ListTile(
               leading: Icon(Icons.photo_library_outlined, color: primaryBlue),
-              title: Text('المعرض', style: TextStyle(color: textColor)),
+              title: Text(loc.translate('gallery'), style: TextStyle(color: textColor)),
               onTap: () async {
                 Navigator.pop(context);
                 final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -77,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             ListTile(
               leading: Icon(Icons.camera_alt_outlined, color: primaryBlue),
-              title: Text('الكاميرا', style: TextStyle(color: textColor)),
+              title: Text(loc.translate('camera'), style: TextStyle(color: textColor)),
               onTap: () async {
                 Navigator.pop(context);
                 final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
@@ -93,6 +111,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _submit(AppLocalizations loc) async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
+
+    final bool usesPicker = _roleChoice == 'coach' || (_roleChoice == 'manager' && _academyMode == 'existing');
+    if (usesPicker && _academyNameController.text.trim().isEmpty) {
+      setState(() => _pickerError = loc.translate('pleaseSelectAcademy'));
+      return;
+    }
+    setState(() => _pickerError = null);
 
     final authProv = Provider.of<AuthProvider>(context, listen: false);
 
@@ -163,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // اختيار صورة البروفايل
+
                     Center(
                       child: Stack(
                         children: [
@@ -222,7 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // الاسم الكامل
+
                     _buildLabel(loc.translate('fullName')),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -242,25 +267,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // اسم الأكاديمية
-                    _buildLabel("اسم الأكاديمية"),
+
+                    _buildLabel(loc.translate('academyNameLabel')),
                     const SizedBox(height: 8),
-                    _buildTextField(
-                      controller: _academyNameController,
-                      hint: "أدخل اسم الأكاديمية",
-                      icon: Icons.sports_soccer_outlined,
-                      keyboardType: TextInputType.text,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return "يرجى إدخال اسم الأكاديمية";
-                        }
-                        return null;
-                      },
-                    ),
+
+
+                    if (_roleChoice == 'manager') ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _academyModeChip(
+                              value: 'new',
+                              label: loc.translate('newAcademyChip'),
+                              icon: Icons.add_business_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _academyModeChip(
+                              value: 'existing',
+                              label: loc.translate('existingAcademyChip'),
+                              icon: Icons.search_rounded,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+
+                    if (_roleChoice == 'coach' || (_roleChoice == 'manager' && _academyMode == 'existing'))
+                      AcademyPickerField(
+                        hint: loc.translate('chooseAcademyFromListHint'),
+                        value: _academyNameController.text.isEmpty ? null : _academyNameController.text,
+                        academyNames: authProv.academyNames,
+                        isLoading: authProv.isLoadingAcademyNames,
+                        errorText: _pickerError,
+                        onChanged: (selected) {
+                          setState(() {
+                            _academyNameController.text = selected;
+                            _pickerError = null;
+                          });
+                        },
+                      )
+                    else
+                      _buildTextField(
+                        controller: _academyNameController,
+                        hint: loc.translate('enterAcademyNameHint'),
+                        icon: Icons.sports_soccer_outlined,
+                        keyboardType: TextInputType.text,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return loc.translate('pleaseEnterAcademyName');
+                          }
+                          return null;
+                        },
+                      ),
                     const SizedBox(height: 18),
 
-                    // رقم الهاتف
-                    _buildLabel("رقم الهاتف"),
+
+                    _buildLabel(loc.translate('phoneNumberLabel')),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _phoneController,
@@ -269,14 +334,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       keyboardType: TextInputType.phone,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return "يرجى إدخال رقم الهاتف";
+                          return loc.translate('phoneRequired');
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 18),
 
-                    // الرقم القومي
+
                     _buildLabel(loc.translate('nationalIdLabel')),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -296,7 +361,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // البريد الإلكتروني
+
                     _buildLabel(loc.translate('emailLabel')),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -316,7 +381,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // كلمة السر
+
                     _buildLabel(loc.translate('passwordLabel')),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -348,7 +413,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // تأكيد كلمة السر
+
                     _buildLabel(loc.translate('confirmPassword')),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -380,7 +445,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // نوع الحساب
+
                     _buildLabel(loc.translate('accountType')),
                     const SizedBox(height: 8),
                     Container(
@@ -437,7 +502,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ],
                     const SizedBox(height: 24),
 
-                    // زر إنشاء الحساب
+
                     SizedBox(
                       height: 52,
                       child: ElevatedButton(
@@ -502,10 +567,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Widget _academyModeChip({required String value, required String label, required IconData icon}) {
+    final isSelected = _academyMode == value;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => setState(() {
+        _academyMode = value;
+        _academyNameController.text = '';
+        _pickerError = null;
+      }),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryBlue.withOpacity(0.12) : cardBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: isSelected ? primaryBlue : borderColor),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: isSelected ? primaryBlue : subTextColor),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? primaryBlue : subTextColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _roleOption(String value, String title, String desc, IconData icon) {
     final isSelected = _roleChoice == value;
+    void selectRole(String newRole) {
+      setState(() {
+        _roleChoice = newRole;
+        _academyMode = 'new';
+        _academyNameController.text = '';
+        _pickerError = null;
+      });
+    }
+
     return InkWell(
-      onTap: () => setState(() => _roleChoice = value),
+      onTap: () => selectRole(value),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
@@ -514,7 +626,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               value: value,
               groupValue: _roleChoice,
               activeColor: primaryBlue,
-              onChanged: (v) => setState(() => _roleChoice = v ?? 'coach'),
+              onChanged: (v) => selectRole(v ?? 'coach'),
             ),
             Icon(icon, color: isSelected ? primaryBlue : subTextColor, size: 20),
             const SizedBox(width: 10),

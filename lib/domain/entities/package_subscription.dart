@@ -2,7 +2,7 @@ class PackageEntity {
   final String id;
   final String title;
   final double price;
-  final String billingPeriod; // Monthly, Yearly, Lifetime
+  final String billingPeriod;
   final List<String> features;
   final bool isFreeTier;
 
@@ -43,7 +43,7 @@ class SubscriptionEntity {
   final String academyId;
   final String packageId;
   final String packageName;
-  final String status; // Active, Expired, Pending
+  final String status;
   final DateTime startDate;
   final DateTime endDate;
   final double pricePaid;

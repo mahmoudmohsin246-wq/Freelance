@@ -7,6 +7,7 @@ import 'financial_provider.dart';
 import 'notification_provider.dart';
 import 'activity_log_provider.dart';
 import '../../core/utils/attendance_code_generator.dart';
+import '../../core/localization/app_localizations.dart';
 
 class Subscription {
   final String id;
@@ -161,8 +162,8 @@ class SubscriptionProvider extends ChangeNotifier {
   UserModel? get searchedUser => _searchedUser;
   bool get isLoading => _isLoading;
 
-  // Set right before addManagerSubscription() returns, so the calling
-  // screen can show "renewed" vs "created" messaging appropriately.
+
+
   bool _lastWasRenewal = false;
   bool get lastActionWasRenewal => _lastWasRenewal;
 
@@ -172,10 +173,13 @@ class SubscriptionProvider extends ChangeNotifier {
 
   Subscription? get currentSubscription => _userActiveSubscription ?? (_subscriptions.isNotEmpty ? _subscriptions.first : null);
 
-  /// Searches Firestore users by email for Manager subscription assignment.
-  Future<UserModel?> searchUserByEmail(String email) async {
-    final cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail.isEmpty) {
+
+
+
+
+  Future<UserModel?> searchUserByIdOrEmail(String query) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) {
       _searchedUser = null;
       notifyListeners();
       return null;
@@ -184,10 +188,14 @@ class SubscriptionProvider extends ChangeNotifier {
     _searchedUser = null;
     notifyListeners();
 
+    final bool isEmail = cleanQuery.contains('@');
+    final field = isEmail ? 'email' : 'publicUserId';
+    final value = isEmail ? cleanQuery.toLowerCase() : cleanQuery;
+
     try {
       final snap = await _firestore
           .collection('users')
-          .where('email', isEqualTo: cleanEmail)
+          .where(field, isEqualTo: value)
           .limit(1)
           .get();
 
@@ -197,7 +205,7 @@ class SubscriptionProvider extends ChangeNotifier {
         _searchedUser = UserModel.fromJson(data);
       }
     } catch (e) {
-      debugPrint('Error searching user by email: $e');
+      debugPrint('Error searching user by $field: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -205,12 +213,12 @@ class SubscriptionProvider extends ChangeNotifier {
     return _searchedUser;
   }
 
-  /// Manager creates a subscription for a specific user linked to their
-  /// Firebase UID — or, if that user already has a currently-active
-  /// subscription, extends it instead of creating a duplicate. Renewing
-  /// continues the new period from the *existing* expiry date (so paying
-  /// early never loses remaining days); if the player's last subscription
-  /// has already expired, the new period starts today as usual.
+
+
+
+
+
+
   Future<bool> addManagerSubscription({
     required String userId,
     required String userEmail,
@@ -218,6 +226,7 @@ class SubscriptionProvider extends ChangeNotifier {
     required int durationMonths,
     required String durationLabel,
     required double amountPaid,
+    required AppLocalizations loc,
     DateTime? startDate,
     String attendanceCode = '',
     FinancialProvider? financialProvider,
@@ -228,8 +237,8 @@ class SubscriptionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Look for an existing subscription for this exact user that hasn't
-      // expired yet — that's the one we extend rather than duplicate.
+
+
       Subscription? existing;
       if (_userActiveSubscription != null &&
           _userActiveSubscription!.userId == userId &&
@@ -249,10 +258,10 @@ class SubscriptionProvider extends ChangeNotifier {
           : await AttendanceCodeGenerator.generateUniqueAttendanceCode(_firestore);
 
       if (existing != null) {
-        // Renew: extend the existing active subscription's expiry instead
-        // of inserting a second row for the same player. Start the new
-        // period right after the current expiry so paying early doesn't
-        // discard remaining days.
+
+
+
+
 
         DateTime addMonths(DateTime from, int months) {
           final int totalMonths = from.month - 1 + months;
@@ -264,7 +273,7 @@ class SubscriptionProvider extends ChangeNotifier {
           return DateTime(newYear, newMonth, newDay, from.hour, from.minute, from.second, from.millisecond, from.microsecond);
         }
 
-        final start = existing.expiryDate; // start new period after current expiry
+        final start = existing.expiryDate;
         final newExpiry = addMonths(start, durationMonths);
 
         final updateData = {
@@ -307,18 +316,18 @@ class SubscriptionProvider extends ChangeNotifier {
 
         if (financialProvider != null) {
           await financialProvider.addTransaction(
-            title: 'تجديد اشتراك: $userName ($durationLabel)',
+            title: '${loc.translate('subscriptionRenewedPrefix')}: $userName ($durationLabel)',
             amount: amountPaid,
             isIncome: true,
-            category: 'اشتراكات',
+            category: loc.translate('subscriptionsCategoryLabel'),
           );
         }
 
         if (activityLogProvider != null) {
           await activityLogProvider.logAction(
-            action: 'Subscription renewed',
+            action: loc.translate('subscriptionRenewedAction'),
             entityType: 'subscription',
-            details: '$userName ($userEmail) — $durationLabel, $amountPaid EGP',
+            details: '$userName ($userEmail) — $durationLabel, $amountPaid ${loc.translate('egpCurrencyAbbrev')}',
             userId: actingManager?.id ?? '',
             userName: actingManager?.name ?? 'Manager',
           );
@@ -331,7 +340,7 @@ class SubscriptionProvider extends ChangeNotifier {
         return true;
       }
 
-      // No existing active subscription — create a new one as before.
+
       final start = startDate ?? DateTime.now();
       final expiry = DateTime(start.year, start.month + durationMonths, start.day);
       final docRef = _firestore.collection('subscriptions').doc();
@@ -342,7 +351,7 @@ class SubscriptionProvider extends ChangeNotifier {
         userId: userId,
         userEmail: userEmail,
         playerName: userName,
-        sportName: 'كرة القدم (Football)',
+        sportName: loc.translate('footballSportLabel'),
         price: amountPaid,
         amountPaid: amountPaid,
         startDate: start,
@@ -364,18 +373,18 @@ class SubscriptionProvider extends ChangeNotifier {
 
       if (financialProvider != null) {
         await financialProvider.addTransaction(
-          title: 'اشتراك: $userName ($durationLabel)',
+          title: '${loc.translate('subscriptionPrefix')}: $userName ($durationLabel)',
           amount: amountPaid,
           isIncome: true,
-          category: 'اشتراكات',
+          category: loc.translate('subscriptionsCategoryLabel'),
         );
       }
 
       if (activityLogProvider != null) {
         await activityLogProvider.logAction(
-          action: 'Subscription created',
+          action: loc.translate('subscriptionCreatedAction'),
           entityType: 'subscription',
-          details: '$userName ($userEmail) — $durationLabel, $amountPaid EGP',
+          details: '$userName ($userEmail) — $durationLabel, $amountPaid ${loc.translate('egpCurrencyAbbrev')}',
           userId: actingManager?.id ?? '',
           userName: actingManager?.name ?? 'Manager',
         );
@@ -394,7 +403,7 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  /// Loads user subscriptions from Firestore and checks for expiry alerts.
+
   Future<void> fetchUserSubscriptions(String userId, {NotificationProvider? notificationProvider}) async {
     if (userId.trim().isEmpty) return;
     _isLoading = true;
@@ -437,7 +446,7 @@ class SubscriptionProvider extends ChangeNotifier {
           }
         }
       } else if (list.isNotEmpty) {
-        _userActiveSubscription = list.first; // Expired subscription
+        _userActiveSubscription = list.first;
         if (notificationProvider != null) {
           final latest = list.first;
           await notificationProvider.checkAndCreateReminderNotification(
@@ -459,15 +468,16 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  /// Quick-add for a walk-in player with no linked account (no search-by-email).
-  /// Still saved to Firestore so it's visible across devices/sessions, just
-  /// without a `userId` — this player won't have login/attendance-calendar
-  /// access until a real account is linked to them later.
+
+
+
+
   Future<void> addSubscription({
     required String playerName,
     required String sportName,
     required double price,
     required int durationInDays,
+    required AppLocalizations loc,
     FinancialProvider? financialProvider,
   }) async {
     final startDate = DateTime.now();
@@ -479,7 +489,7 @@ class SubscriptionProvider extends ChangeNotifier {
     final newSub = Subscription(
       id: docRef.id,
       playerName: playerName,
-      sportName: sportName.isEmpty ? 'كرة القدم (Football)' : sportName,
+      sportName: sportName.isEmpty ? loc.translate('footballSportLabel') : sportName,
       price: price,
       amountPaid: price,
       startDate: startDate,
@@ -497,10 +507,10 @@ class SubscriptionProvider extends ChangeNotifier {
 
       if (financialProvider != null) {
         await financialProvider.addTransaction(
-          title: 'اشتراك: $playerName ($sportName)',
+          title: '${loc.translate('subscriptionPrefix')}: $playerName ($sportName)',
           amount: price,
           isIncome: true,
-          category: 'اشتراكات',
+          category: loc.translate('subscriptionsCategoryLabel'),
         );
       }
     } catch (e) {
@@ -508,10 +518,10 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  /// Returns this subscription's 6-digit attendance code, generating and
-  /// persisting one now if it predates this feature (old records won't have
-  /// one yet). If the subscription is linked to a real account, the code is
-  /// shared with (and saved on) that user's profile too.
+
+
+
+
   Future<String> ensureSubscriptionAttendanceCode(Subscription sub) async {
     if (sub.attendanceCode.trim().isNotEmpty) return sub.attendanceCode;
 
@@ -542,8 +552,8 @@ class SubscriptionProvider extends ChangeNotifier {
     return code;
   }
 
-  /// Returns this subscription's 6-digit Public Subscription ID, generating and
-  /// persisting one now if missing on older records.
+
+
   Future<String> ensurePublicSubscriptionId(Subscription sub) async {
     if (sub.publicSubscriptionId.trim().isNotEmpty) return sub.publicSubscriptionId;
 
@@ -592,9 +602,9 @@ class SubscriptionProvider extends ChangeNotifier {
     await prefs.setString('app_subscriptions', encodedData);
   }
 
-  /// Loads every subscription from Firestore (the source of truth) so the
-  /// manager's players list reflects reality across devices/sessions,
-  /// instead of relying on a per-device local cache.
+
+
+
   Future<void> loadSubscriptions() async {
     _isLoading = true;
     notifyListeners();
@@ -606,9 +616,9 @@ class SubscriptionProvider extends ChangeNotifier {
       _subscriptions = list;
     } catch (e) {
       debugPrint('Error loading subscriptions from Firestore: $e');
-      // Fall back to whatever was last cached locally, if anything, so the
-      // manager isn't left with a completely empty screen on a network
-      // error — this is best-effort only, not the source of truth.
+
+
+
       try {
         final prefs = await SharedPreferences.getInstance();
         final String? encodedData = prefs.getString('app_subscriptions');

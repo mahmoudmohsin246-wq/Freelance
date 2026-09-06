@@ -68,10 +68,10 @@ class _AttendanceScannerScreenState extends State<AttendanceScannerScreen> {
       });
     } else {
       final player = match.first;
-      // Key attendance by the player's Firebase account id (userId) when the
-      // subscription is linked to a real account, so history follows the
-      // person across subscription renewals. Falls back to the subscription
-      // id for older/unlinked subscriptions.
+
+
+
+
       final personId = player.userId.trim().isNotEmpty ? player.userId : player.id;
       final isNew = await attendanceProv.recordAttendance(
         personId: personId,
@@ -132,7 +132,7 @@ class _AttendanceScannerScreenState extends State<AttendanceScannerScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'خطأ في فتح الكاميرا:\n'
+                              '${loc.translate('cameraOpenErrorPrefix')}\n'
                               '${error.errorCode}\n'
                               '${error.errorDetails?.message ?? ""}',
                               textAlign: TextAlign.center,
@@ -142,7 +142,7 @@ class _AttendanceScannerScreenState extends State<AttendanceScannerScreen> {
                             ElevatedButton.icon(
                               onPressed: _recreateController,
                               icon: const Icon(Icons.refresh),
-                              label: const Text('إعادة محاولة فتح الكاميرا'),
+                              label: Text(loc.translate('retryOpenCamera')),
                             ),
                           ],
                         ),
