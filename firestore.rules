@@ -55,6 +55,14 @@ service cloud.firestore {
         allow read, update, delete: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) || isStaff();
       }
+
+      // FCM push-notification device tokens. Only the owning user can see
+      // or manage their own tokens; a Cloud Function (Admin SDK, which
+      // bypasses these rules entirely) is what actually reads them to
+      // deliver pushes, so no other client ever needs access here.
+      match /fcmTokens/{tokenId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Subscriptions Collection

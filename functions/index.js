@@ -3,6 +3,7 @@
  */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
@@ -18,7 +19,7 @@ const SENDER_EMAIL = defineSecret('SENDER_EMAIL');
 const SUPABASE_URL = defineSecret('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = defineSecret('SUPABASE_SERVICE_ROLE_KEY');
 
-const APP_NAME = 'أكاديمية رياضية';
+const APP_NAME = 'Academio';
 
 function buildResetEmailHtml(link) {
   return `
@@ -159,6 +160,113 @@ exports.generateAvatarUploadUrl = onCall(
     } catch (err) {
       console.error('generateAvatarUploadUrl error:', err);
       throw new HttpsError('internal', err.message);
+    }
+  }
+);
+
+/**
+ * دالة إرسال Push Notification (FCM) حقيقية عند إنشاء إشعار في Firestore
+ *
+ * الـ Manager (أو أي staff) بيكتب مستند إشعار جديد تحت:
+ *   users/{userId}/notifications/{notificationId}
+ * (سواء إشعار لمستخدم واحد أو جزء من broadcast لكل المستخدمين — الاثنين
+ * بيتكتبوا كمستند منفصل تحت كل مستخدم، فنفس الـ trigger ده بيغطي الحالتين
+ * من غير ما نحتاج function تانية مخصصة للـ broadcast).
+ *
+ * الفنكشن دي بتاخد الـ FCM tokens المسجلة للمستخدم صاحب المستند
+ * (users/{userId}/fcmTokens/*) وتبعتلهم push notification حقيقي عن طريق
+ * Firebase Admin SDK. أي token مرفوض/منتهي (unregistered) بيتشال من
+ * Firestore تلقائيًا عشان محدش يفضل يحاول يبعتله تاني.
+ */
+exports.sendPushOnNotificationCreated = onDocumentCreated(
+  'users/{userId}/notifications/{notificationId}',
+  async (event) => {
+    const { userId, notificationId } = event.params;
+    const snap = event.data;
+    if (!snap) {
+      console.error('sendPushOnNotificationCreated: no snapshot data for', notificationId);
+      return;
+    }
+
+    const notif = snap.data() || {};
+    const title = (notif.title || '').toString().trim();
+    const body = (notif.message || '').toString().trim();
+
+    if (!title && !body) {
+      console.warn('sendPushOnNotificationCreated: empty title/message, skipping', notificationId);
+      return;
+    }
+
+    try {
+      const tokensSnap = await admin
+        .firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('fcmTokens')
+        .get();
+
+      if (tokensSnap.empty) {
+        // Normal case: user has never opened the app on a device with
+        // push permission granted, or is signed out everywhere.
+        return;
+      }
+
+      const tokens = tokensSnap.docs.map((d) => d.id);
+
+      const message = {
+        notification: { title: title || APP_NAME, body },
+        data: {
+          notificationId,
+          type: (notif.type || 'general').toString(),
+          subscriptionId: (notif.subscriptionId || '').toString(),
+          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+        },
+        android: {
+          notification: {
+            channelId: 'high_importance_channel',
+          },
+        },
+        apns: {
+          payload: {
+            aps: { sound: 'default' },
+          },
+        },
+        tokens,
+      };
+
+      const response = await admin.messaging().sendEachForMulticast(message);
+
+      if (response.failureCount > 0) {
+        const staleTokens = [];
+        response.responses.forEach((r, idx) => {
+          if (!r.success) {
+            const code = r.error && r.error.code;
+            console.error('FCM send failed for token', tokens[idx], code, r.error && r.error.message);
+            if (
+              code === 'messaging/registration-token-not-registered' ||
+              code === 'messaging/invalid-registration-token'
+            ) {
+              staleTokens.push(tokens[idx]);
+            }
+          }
+        });
+
+        if (staleTokens.length > 0) {
+          const batch = admin.firestore().batch();
+          staleTokens.forEach((t) => {
+            batch.delete(
+              admin.firestore().collection('users').doc(userId).collection('fcmTokens').doc(t)
+            );
+          });
+          await batch.commit();
+        }
+      }
+
+      console.log(
+        `sendPushOnNotificationCreated: sent ${response.successCount}/${tokens.length} for user ${userId}, notification ${notificationId}`
+      );
+    } catch (err) {
+      console.error('sendPushOnNotificationCreated error:', err);
     }
   }
 );

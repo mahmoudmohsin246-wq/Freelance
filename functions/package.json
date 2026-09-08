@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for sports academy app - custom email sending via SendGrid",
+  "description": "Cloud Functions for Academio - custom email sending via SendGrid",
   "engines": {
     "node": "20"
   },

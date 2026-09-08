@@ -1,6 +1,6 @@
 {
-    "name": "sports_academy_app",
-    "short_name": "sports_academy_app",
+    "name": "Academio",
+    "short_name": "Academio",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -22,7 +22,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Sports Academy Management Platform',
+              'Academio',
               style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
             ),
             const SizedBox(height: 24),
@@ -42,7 +42,7 @@ class AboutScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Sports Academy Enterprise System',
+                      'Academio',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
@@ -84,7 +84,7 @@ class AboutScreen extends StatelessWidget {
                     onTap: () => _showDialogInfo(
                       context,
                       loc.translate('termsAndConditions'),
-                      'By utilizing the Sports Academy Management System, workspace administrators agree to maintain accurate records, comply with regional labor policies for employee attendance & salaries, and honor student athlete privacy.',
+                      'By utilizing Academio, workspace administrators agree to maintain accurate records, comply with regional labor policies for employee attendance & salaries, and honor student athlete privacy.',
                     ),
                   ),
                   const Divider(height: 1),

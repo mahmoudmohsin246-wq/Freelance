@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
+import 'core/services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/financial_provider.dart';
@@ -30,7 +32,11 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
+  // Must be registered right after Firebase.initializeApp(), before
+  // runApp(), so the OS can deliver messages while the app is backgrounded
+  // or fully terminated.
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await PushNotificationService.instance.initialize();
 
   await Supabase.initialize(
     url: 'https://twgcnijtlmcjvuwbyguc.supabase.co',
@@ -63,7 +69,7 @@ class MyApp extends StatelessWidget {
       child: Consumer2<LocaleProvider, ThemeProvider>(
         builder: (context, localeProv, themeProv, _) {
           return MaterialApp(
-            title: 'Sports Academy App',
+            title: 'Academio',
             debugShowCheckedModeBanner: false,
             themeMode: themeProv.themeMode,
             theme: AppTheme.lightTheme,

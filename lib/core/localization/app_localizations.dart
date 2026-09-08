@@ -12,7 +12,7 @@ class AppLocalizations {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
-      'appName': 'Sports Academy System',
+      'appName': 'Academio',
 
       'sendMessageNotifTitle': 'Send Message / Notification',
       'specificUserChip': 'Specific User',
@@ -296,7 +296,7 @@ class AppLocalizations {
       'prioritySupport': 'Priority Support',
       'comingSoonFeature': 'Coming soon',
 
-      'aboutAppBody': 'Sports Academy Management System helps academy owners and coaches manage branches, players, subscriptions, finances and staff from one place — simply and efficiently.',
+      'aboutAppBody': 'Academio helps academy owners and coaches manage branches, players, subscriptions, finances and staff from one place — simply and efficiently.',
       'ourFeatures': 'Features',
       'featureBranches': 'Manage multiple branches and groups',
       'featurePlayers': 'Full player and subscriber database',
@@ -442,7 +442,7 @@ class AppLocalizations {
       'viewAttendance': 'View attendance',
     },
     'ar': {
-      'appName': 'نظام إدارة الأكاديميات الرياضية',
+      'appName': 'Academio',
 
       'sendMessageNotifTitle': 'إرسال رسالة / إشعار',
       'specificUserChip': 'مستخدم محدد',
@@ -725,7 +725,7 @@ class AppLocalizations {
       'prioritySupport': 'دعم فني ذو أولوية',
       'comingSoonFeature': 'قريباً',
 
-      'aboutAppBody': 'نظام إدارة الأكاديميات الرياضية بيساعد أصحاب الأكاديميات والمدربين يديروا الفروع واللاعبين والاشتراكات والمالية والموظفين من مكان واحد، ببساطة وكفاءة.',
+      'aboutAppBody': 'تطبيق Academio بيساعد أصحاب الأكاديميات والمدربين يديروا الفروع واللاعبين والاشتراكات والمالية والموظفين من مكان واحد، ببساطة وكفاءة.',
       'ourFeatures': 'مميزات التطبيق',
       'featureBranches': 'إدارة عدة فروع ومجموعات',
       'featurePlayers': 'قاعدة بيانات كاملة للاعبين والمشتركين',

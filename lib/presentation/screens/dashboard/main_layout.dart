@@ -9,6 +9,7 @@ import '../../providers/subscription_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/financial_provider.dart';
 import '../../providers/branches_provider.dart';
+import '../../../core/services/push_notification_service.dart';
 
 import '../players/players_screen.dart';
 import '../expenses/expenses_screen.dart';
@@ -51,6 +52,7 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   void initState() {
     super.initState();
+    PushNotificationService.instance.notificationTapNotifier.addListener(_onPushNotificationTapped);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProv = Provider.of<AuthProvider>(context, listen: false);
       final user = authProv.currentUser;
@@ -60,8 +62,12 @@ class _MainLayoutState extends State<MainLayout> {
         notifProv.fetchNotifications(user.id);
         subProv.fetchUserSubscriptions(user.id, notificationProvider: notifProv);
 
-
-
+        // Covers a cold start where the app was launched by tapping a push
+        // notification (the tap happened before this screen, and this
+        // listener, existed).
+        if (PushNotificationService.instance.consumePendingNotificationTap()) {
+          _onPushNotificationTapped();
+        }
 
 
         if (authProv.isManager || authProv.canTakeAttendance) {
@@ -76,6 +82,22 @@ class _MainLayoutState extends State<MainLayout> {
         Provider.of<BranchesProvider>(context, listen: false).loadBranches();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    PushNotificationService.instance.notificationTapNotifier.removeListener(_onPushNotificationTapped);
+    super.dispose();
+  }
+
+  void _onPushNotificationTapped() {
+    if (!mounted) return;
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    if (authProv.currentUser == null) return;
+    final notifProv = Provider.of<NotificationProvider>(context, listen: false);
+    // Opening the same in-app notification center the bell icon already
+    // opens — push is an additional delivery channel, not a new screen.
+    _showNotificationsSheet(context, notifProv, authProv);
   }
 
   void _showSendMessageDialog(BuildContext context, NotificationProvider notifProv, AuthProvider authProv) {

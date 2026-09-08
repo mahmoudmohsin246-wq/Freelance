@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
@@ -7,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/utils/attendance_code_generator.dart';
 import '../../core/services/supabase_storage_service.dart';
+import '../../core/services/push_notification_service.dart';
 import '../../services/privacy_service.dart';
 
 enum UserRole { admin, coach, employee }
@@ -49,6 +51,7 @@ class UserModel {
 
   UserModel copyWith({
     String? name,
+    String? email,
     String? phone,
     String? academyName,
     String? sport,
@@ -62,7 +65,7 @@ class UserModel {
     return UserModel(
       id: id,
       name: name ?? this.name,
-      email: email,
+      email: email ?? this.email,
       role: role,
       phone: phone ?? this.phone,
       academyName: academyName ?? this.academyName,
@@ -252,6 +255,14 @@ class AuthProvider extends ChangeNotifier {
 
       final target = UserModel.fromJson({...data}, emailVerified: false);
 
+      // Managers and staff must always see full profile data regardless
+      // of a player's privacy setting — privacy is only meant to hide a
+      // player's info from OTHER players, never from academy staff.
+      final requesterIsStaff = _currentUser != null &&
+          (_currentUser!.role == UserRole.admin || _currentUser!.role == UserRole.employee);
+      if (requesterIsStaff) {
+        return UserModel.fromJson(data, emailVerified: false);
+      }
 
       final privacyService = PrivacyService(relationshipService: null, adminService: null);
 
@@ -295,10 +306,27 @@ class AuthProvider extends ChangeNotifier {
         .collection(_usersCollection)
         .where('academyName', isEqualTo: academyName)
         .get();
+
+    // Staff (manager/employee) always see full data. A non-staff viewer
+    // (a player) must NOT see another member's email/phone/national ID if
+    // that member has marked their profile private — this bulk load is
+    // what actually powers the Players list, so privacy has to be
+    // enforced here too, not just in the single-profile lookup below.
+    final viewerIsStaff = _currentUser != null &&
+        (_currentUser!.role == UserRole.admin || _currentUser!.role == UserRole.employee);
+
     _academyMembers = query.docs.map((d) {
       final data = d.data();
       data['id'] = d.id;
-      return UserModel.fromJson(data);
+      final member = UserModel.fromJson(data);
+
+      final isSelf = _currentUser != null && _currentUser!.id == member.id;
+      final isPrivate = !member.isProfilePublic;
+
+      if (isPrivate && !isSelf && !viewerIsStaff) {
+        return member.copyWith(email: '', phone: '', nationalId: '');
+      }
+      return member;
     }).toList();
   }
 
@@ -334,6 +362,8 @@ class AuthProvider extends ChangeNotifier {
       _currentUser = profile;
       _isAuthenticated = true;
       await _loadAcademyMembers(profile.academyName);
+      // Fire-and-forget: push registration must never block or fail login.
+      unawaited(PushNotificationService.instance.registerTokenForUser(uid));
 
       _isLoading = false;
       notifyListeners();
@@ -459,6 +489,8 @@ class AuthProvider extends ChangeNotifier {
       );
       _isAuthenticated = true;
       await _loadAcademyMembers(academyName.trim());
+      // Fire-and-forget: push registration must never block or fail signup.
+      unawaited(PushNotificationService.instance.registerTokenForUser(user.uid));
 
       _isLoading = false;
       notifyListeners();
@@ -757,6 +789,10 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    final outgoingUid = _currentUser?.id;
+    if (outgoingUid != null) {
+      await PushNotificationService.instance.clearTokenForUser(outgoingUid);
+    }
     await _auth.signOut();
     final ok = await login(email, password);
     if (!ok) {
@@ -767,6 +803,15 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Remove this device's token association BEFORE signing out, while
+    // Firestore rules can still authorize it as the outgoing user — this
+    // stops a future user on this device from being sent this account's
+    // pushes, and stops this account from getting pushes on a device it's
+    // no longer signed into.
+    final outgoingUid = _currentUser?.id;
+    if (outgoingUid != null) {
+      await PushNotificationService.instance.clearTokenForUser(outgoingUid);
+    }
     await _auth.signOut();
     _currentUser = null;
     _isAuthenticated = false;
@@ -786,6 +831,7 @@ class AuthProvider extends ChangeNotifier {
         );
         await user.reauthenticateWithCredential(cred);
       }
+      await PushNotificationService.instance.clearTokenForUser(user.uid);
       await _firestore.collection(_usersCollection).doc(user.uid).delete();
       await user.delete();
 
@@ -821,6 +867,7 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = true;
     _isCheckingSession = false;
     await _loadAcademyMembers(profile.academyName);
+    unawaited(PushNotificationService.instance.registerTokenForUser(profile.id));
     notifyListeners();
   }
 }

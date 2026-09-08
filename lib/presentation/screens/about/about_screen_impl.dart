@@ -219,7 +219,7 @@ class _LegalTextScreen extends StatelessWidget {
 const String _privacyAr = '''
 آخر تحديث: 2026
 
-نحن في نظام إدارة الأكاديميات الرياضية نحترم خصوصيتك، وتوضح هذه السياسة نوع البيانات التي نجمعها وكيف نستخدمها.
+نحن في Academio نحترم خصوصيتك، وتوضح هذه السياسة نوع البيانات التي نجمعها وكيف نستخدمها.
 
 1. البيانات التي نجمعها
 نجمع البيانات التي تدخلها بنفسك عند إنشاء الحساب: الاسم، البريد الإلكتروني، رقم الهاتف، واسم الأكاديمية. كما نخزّن بيانات اللاعبين والمشتركين والمعاملات المالية التي تُدخلها داخل التطبيق.
@@ -246,7 +246,7 @@ const String _privacyAr = '''
 const String _privacyEn = '''
 Last updated: 2026
 
-At the Sports Academy Management System, we respect your privacy. This policy explains what data we collect and how we use it.
+At Academio, we respect your privacy. This policy explains what data we collect and how we use it.
 
 1. Data We Collect
 We collect the data you provide when creating an account: name, email, phone number, and academy name. We also store player, subscriber, and financial transaction data you enter within the app.
@@ -273,7 +273,7 @@ For any privacy inquiries, you can reach us through the "Contact Us" page.
 const String _termsAr = '''
 آخر تحديث: 2026
 
-بستخدامك لتطبيق نظام إدارة الأكاديميات الرياضية، فإنك توافق على الشروط والأحكام التالية.
+باستخدامك لتطبيق Academio، فإنك توافق على الشروط والأحكام التالية.
 
 1. قبول الشروط
 استخدامك للتطبيق يعني موافقتك الكاملة على هذه الشروط. إذا كنت لا توافق عليها، يرجى التوقف عن استخدام التطبيق.
@@ -309,7 +309,7 @@ const String _termsAr = '''
 const String _termsEn = '''
 Last updated: 2026
 
-By using the Sports Academy Management System app, you agree to the following terms and conditions.
+By using the Academio app, you agree to the following terms and conditions.
 
 1. Acceptance of Terms
 Using the app means you fully accept these terms. If you do not agree, please stop using the app.

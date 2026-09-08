@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import '../../core/services/push_notification_service.dart';
 
 class AppNotification {
   final String id;
@@ -132,6 +136,12 @@ class NotificationProvider extends ChangeNotifier {
       );
 
       await docRef.set(notif.toJson());
+      // Fire-and-forget: ask the (free, Supabase-hosted) push relay to
+      // deliver a real device notification for what we just wrote.
+      unawaited(PushNotificationService.instance.triggerServerPush(
+        userId: targetUserId,
+        notificationId: docRef.id,
+      ));
       return true;
     } catch (e) {
       debugPrint('Error sending notification to user: $e');
@@ -150,6 +160,7 @@ class NotificationProvider extends ChangeNotifier {
     if (targetUserIds.isEmpty || title.trim().isEmpty) return;
 
     final batch = _firestore.batch();
+    final createdIds = <String, String>{}; // uid -> notificationId
     for (final uid in targetUserIds) {
       if (uid.trim().isEmpty) continue;
       final docRef = _firestore
@@ -170,10 +181,18 @@ class NotificationProvider extends ChangeNotifier {
       );
 
       batch.set(docRef, notif.toJson());
+      createdIds[uid] = docRef.id;
     }
 
     try {
       await batch.commit();
+      // Fire-and-forget: trigger a real device push for every recipient.
+      for (final entry in createdIds.entries) {
+        unawaited(PushNotificationService.instance.triggerServerPush(
+          userId: entry.key,
+          notificationId: entry.value,
+        ));
+      }
     } catch (e) {
       debugPrint('Error committing broadcast notifications batch: $e');
     }
@@ -224,6 +243,10 @@ class NotificationProvider extends ChangeNotifier {
       );
 
       await docRef.set(notif.toJson());
+      unawaited(PushNotificationService.instance.triggerServerPush(
+        userId: targetUserId,
+        notificationId: docRef.id,
+      ));
       return true;
     } catch (e) {
       debugPrint('Error sending notification by email: $e');
@@ -267,6 +290,10 @@ class NotificationProvider extends ChangeNotifier {
       );
 
       await docRef.set(newNotification.toJson());
+      unawaited(PushNotificationService.instance.triggerServerPush(
+        userId: userId,
+        notificationId: docRef.id,
+      ));
       await fetchNotifications(userId);
     } catch (e) {
       debugPrint('Error creating reminder notification: $e');

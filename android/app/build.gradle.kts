@@ -11,6 +11,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -45,4 +46,6 @@ flutter {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
     implementation("com.google.firebase:firebase-analytics")
+    // Required by flutter_local_notifications (used for foreground push banners).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
