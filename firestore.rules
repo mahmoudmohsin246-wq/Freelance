@@ -159,6 +159,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Public list of academy names — read by the registration screen
+    // before the user signs in. Written only by the syncAcademyNames
+    // Cloud Function (Admin SDK), never directly by clients.
+    match /academyNames/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Fallback default rule
     match /{document=**} {
       allow read, write: if isAuthenticated();

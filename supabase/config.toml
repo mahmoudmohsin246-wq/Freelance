@@ -9,3 +9,8 @@ entrypoint = "./functions/generate-avatar-upload-url/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-avatar-upload-url/*.html" ]
+
+[functions.sync-academy-names]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/sync-academy-names/index.ts"

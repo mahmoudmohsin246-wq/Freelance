@@ -11,6 +11,12 @@ const sgMail = require('@sendgrid/mail');
 const { createClient } = require('@supabase/supabase-js');
 
 admin.initializeApp();
+
+// Academy-names sync: keeps a public academyNames/list document available
+// for the registration screen (used before the user is signed in). See
+// functions/academyNames.js.
+exports.syncAcademyNames = require('./academyNames').syncAcademyNames;
+exports.backfillAcademyNamesOnce = require('./academyNames').backfillAcademyNamesOnce;
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
 // Secret definitions

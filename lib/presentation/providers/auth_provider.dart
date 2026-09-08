@@ -1,15 +1,26 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/utils/attendance_code_generator.dart';
 import '../../core/services/supabase_storage_service.dart';
-import '../../core/services/push_notification_service.dart';
 import '../../services/privacy_service.dart';
+const String _supabaseFunctionsBaseUrl =
+    'https://twgcnijtlmcjvuwbyguc.supabase.co/functions/v1';
+class _CurrentUserAdminService implements AdminService {
+  final bool _requesterIsAdmin;
+  _CurrentUserAdminService(this._requesterIsAdmin);
+
+  @override
+  bool isAdmin(String userId) => _requesterIsAdmin;
+}
 
 enum UserRole { admin, coach, employee }
 
@@ -26,11 +37,11 @@ class UserModel {
   final String nationalId;
   final String attendanceCode;
   final String publicUserId;
-
-
-
-
-
+  // Only meaningful for trainee/player (coach) accounts. When false, the
+  // player's contact info and attendance calendar are hidden from other
+  // players in the players list — managers and employees can always see
+  // them regardless of this flag. Defaults to true (normal/public) so
+  // existing accounts keep their current behavior.
   final bool isProfilePublic;
 
   UserModel({
@@ -51,7 +62,6 @@ class UserModel {
 
   UserModel copyWith({
     String? name,
-    String? email,
     String? phone,
     String? academyName,
     String? sport,
@@ -65,7 +75,7 @@ class UserModel {
     return UserModel(
       id: id,
       name: name ?? this.name,
-      email: email ?? this.email,
+      email: email,
       role: role,
       phone: phone ?? this.phone,
       academyName: academyName ?? this.academyName,
@@ -138,7 +148,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isManager => _currentUser?.role == UserRole.admin;
 
-
+  // "Player" in the app's UI (trainee) maps to UserRole.coach internally.
   bool get isPlayer => _currentUser?.role == UserRole.coach;
 
   bool get isProfilePublic => _currentUser?.isProfilePublic ?? true;
@@ -201,15 +211,15 @@ class AuthProvider extends ChangeNotifier {
     return 'genericError';
   }
 
-
-
-
+  /// Fetches a single user's profile by Firebase UID. Used by managers to
+  /// look up a player/trainee's contact info (email, phone, national ID)
+  /// for the attendance calendar screen.
   Future<UserModel?> fetchUserById(String uid) => _fetchProfile(uid);
 
-
-
-
-
+  /// Returns this person's short 6-digit attendance code, generating and
+  /// persisting a new unique one the first time it's needed. Works for
+  /// employees and any linked player/trainee account alike, since both are
+  /// just `UserModel` accounts.
   Future<String> ensureAttendanceCode(UserModel user) async {
     if (user.attendanceCode.trim().isNotEmpty) return user.attendanceCode;
 
@@ -224,7 +234,7 @@ class AuthProvider extends ChangeNotifier {
     return code;
   }
 
-
+  /// Returns this person's 6-digit Public User ID, generating a unique one if missing.
   Future<String> ensurePublicUserId(UserModel user) async {
     if (user.publicUserId.trim().isNotEmpty) return user.publicUserId;
 
@@ -246,36 +256,33 @@ class AuthProvider extends ChangeNotifier {
       final data = doc.data()!;
       data['id'] = uid;
 
-
+      // If this is the signed-in Firebase user, always return full profile
       final fbUser = _auth.currentUser;
       if (fbUser != null && fbUser.uid == uid) {
         return UserModel.fromJson(data, emailVerified: fbUser.emailVerified);
       }
 
-
+      // Build target for privacy checks
       final target = UserModel.fromJson({...data}, emailVerified: false);
 
-      // Managers and staff must always see full profile data regardless
-      // of a player's privacy setting — privacy is only meant to hide a
-      // player's info from OTHER players, never from academy staff.
-      final requesterIsStaff = _currentUser != null &&
-          (_currentUser!.role == UserRole.admin || _currentUser!.role == UserRole.employee);
-      if (requesterIsStaff) {
-        return UserModel.fromJson(data, emailVerified: false);
-      }
+      // Use the privacy helper. A manager (admin) can always see the full
+      // profile even when it's set to private — an employee's private
+      // profile should still be visible to their own academy's manager.
+      final privacyService = PrivacyService(
+        relationshipService: null,
+        adminService: _CurrentUserAdminService(_currentUser?.role == UserRole.admin),
+      );
 
-      final privacyService = PrivacyService(relationshipService: null, adminService: null);
-
-
+      // Check whether the currently loaded local _currentUser may view the target profile.
       final canView = await privacyService.canViewProfile(requester: _currentUser, target: target);
 
       if (!canView) {
-
+        // Return limited public view (Option B): id + displayName + private flag
         final limited = UserModel(
           id: uid,
           name: data['name'] as String? ?? '',
           email: '',
-          role: UserRole.employee,
+          role: UserRole.employee, // placeholder; calling code should not rely on sensitive fields
           phone: '',
           academyName: '',
           sport: 'sportFootball',
@@ -289,7 +296,7 @@ class AuthProvider extends ChangeNotifier {
         return limited;
       }
 
-
+      // Authorized: return full profile
       return UserModel.fromJson(data, emailVerified: fbUser?.emailVerified ?? false);
     } on FirebaseException catch (e) {
       debugPrint('Error fetching profile ($uid): ${e.code}');
@@ -306,27 +313,10 @@ class AuthProvider extends ChangeNotifier {
         .collection(_usersCollection)
         .where('academyName', isEqualTo: academyName)
         .get();
-
-    // Staff (manager/employee) always see full data. A non-staff viewer
-    // (a player) must NOT see another member's email/phone/national ID if
-    // that member has marked their profile private — this bulk load is
-    // what actually powers the Players list, so privacy has to be
-    // enforced here too, not just in the single-profile lookup below.
-    final viewerIsStaff = _currentUser != null &&
-        (_currentUser!.role == UserRole.admin || _currentUser!.role == UserRole.employee);
-
     _academyMembers = query.docs.map((d) {
       final data = d.data();
       data['id'] = d.id;
-      final member = UserModel.fromJson(data);
-
-      final isSelf = _currentUser != null && _currentUser!.id == member.id;
-      final isPrivate = !member.isProfilePublic;
-
-      if (isPrivate && !isSelf && !viewerIsStaff) {
-        return member.copyWith(email: '', phone: '', nationalId: '');
-      }
-      return member;
+      return UserModel.fromJson(data);
     }).toList();
   }
 
@@ -362,8 +352,6 @@ class AuthProvider extends ChangeNotifier {
       _currentUser = profile;
       _isAuthenticated = true;
       await _loadAcademyMembers(profile.academyName);
-      // Fire-and-forget: push registration must never block or fail login.
-      unawaited(PushNotificationService.instance.registerTokenForUser(uid));
 
       _isLoading = false;
       notifyListeners();
@@ -473,6 +461,13 @@ class AuthProvider extends ChangeNotifier {
       };
       await _firestore.collection(_usersCollection).doc(user.uid).set(profileData);
 
+      if (role == UserRole.admin && academyName.trim().isNotEmpty) {
+        // Fire-and-forget: publish this new academy name to the public
+        // Supabase list so future signups can find it, without blocking
+        // registration if the sync happens to fail.
+        unawaited(_syncAcademyNamesToSupabase([academyName.trim()]));
+      }
+
       try {
         await user.sendEmailVerification();
       } catch (e) {
@@ -489,8 +484,6 @@ class AuthProvider extends ChangeNotifier {
       );
       _isAuthenticated = true;
       await _loadAcademyMembers(academyName.trim());
-      // Fire-and-forget: push registration must never block or fail signup.
-      unawaited(PushNotificationService.instance.registerTokenForUser(user.uid));
 
       _isLoading = false;
       notifyListeners();
@@ -601,10 +594,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-
-
-
-
+  /// Lets a trainee/player toggle whether other players can see their
+  /// profile (contact info + attendance) in the players list. Has no
+  /// effect on what a manager or employee can see — they always have
+  /// full access regardless of this setting.
   Future<bool> updateProfileVisibility(bool isPublic) async {
     if (_currentUser == null) return false;
 
@@ -625,7 +618,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error updating profile visibility: $e');
-
+      // Roll back the optimistic local update since the write failed.
       _currentUser = _currentUser!.copyWith(isProfilePublic: previous);
       notifyListeners();
       return false;
@@ -661,12 +654,58 @@ class AuthProvider extends ChangeNotifier {
   List<String> get academyNames => _academyNames;
   bool get isLoadingAcademyNames => _isLoadingAcademyNames;
 
-
-
-
+  /// Distinct list of existing academy names, read from the public
+  /// `academy_names` table on Supabase (see supabase/sql/academy_names_setup.sql
+  /// and supabase/functions/sync-academy-names). Readable even before the
+  /// user signs in to Firebase — Supabase's own auth isn't involved, the
+  /// table just has a public-read RLS policy — which is exactly what the
+  /// registration screen needs.
   Future<void> fetchAcademyNames() async {
     _isLoadingAcademyNames = true;
     notifyListeners();
+    try {
+      final rows = await Supabase.instance.client
+          .from('academy_names')
+          .select('name')
+          .order('name');
+      _academyNames = (rows as List).map((row) => row['name'] as String).toList();
+    } catch (e) {
+      debugPrint('Error fetching academy names: $e');
+    } finally {
+      _isLoadingAcademyNames = false;
+      notifyListeners();
+    }
+  }
+
+  /// Sends one or more academy names to the sync-academy-names Supabase
+  /// Edge Function, which verifies the caller's Firebase ID token and then
+  /// upserts them into the public `academy_names` table using the service
+  /// role (the app itself never gets direct write access to that table).
+  Future<void> _syncAcademyNamesToSupabase(List<String> names) async {
+    if (names.isEmpty) return;
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      if (token == null) return;
+      await http.post(
+        Uri.parse('$_supabaseFunctionsBaseUrl/sync-academy-names'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'names': names}),
+      );
+    } catch (e) {
+      debugPrint('Error syncing academy names to Supabase: $e');
+    }
+  }
+
+  /// One-time helper: pushes every academy name that already exists in
+  /// Firestore (from managers who registered before this Supabase sync was
+  /// added) into the public Supabase list. Call this ONCE while signed in
+  /// as any staff member (Firestore's `users` collection is only readable
+  /// while authenticated), then remove the call — new registrations sync
+  /// themselves automatically from now on.
+  Future<void> backfillAcademyNamesToSupabaseOnce() async {
     try {
       final snap = await _firestore
           .collection(_usersCollection)
@@ -677,13 +716,10 @@ class AuthProvider extends ChangeNotifier {
           .where((name) => name.isNotEmpty)
           .toSet()
           .toList();
-      names.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      _academyNames = names;
+      await _syncAcademyNamesToSupabase(names);
+      debugPrint('Backfilled ${names.length} academy name(s) to Supabase.');
     } catch (e) {
-      debugPrint('Error fetching academy names: $e');
-    } finally {
-      _isLoadingAcademyNames = false;
-      notifyListeners();
+      debugPrint('Error backfilling academy names to Supabase: $e');
     }
   }
 
@@ -789,10 +825,6 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final outgoingUid = _currentUser?.id;
-    if (outgoingUid != null) {
-      await PushNotificationService.instance.clearTokenForUser(outgoingUid);
-    }
     await _auth.signOut();
     final ok = await login(email, password);
     if (!ok) {
@@ -803,15 +835,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    // Remove this device's token association BEFORE signing out, while
-    // Firestore rules can still authorize it as the outgoing user — this
-    // stops a future user on this device from being sent this account's
-    // pushes, and stops this account from getting pushes on a device it's
-    // no longer signed into.
-    final outgoingUid = _currentUser?.id;
-    if (outgoingUid != null) {
-      await PushNotificationService.instance.clearTokenForUser(outgoingUid);
-    }
     await _auth.signOut();
     _currentUser = null;
     _isAuthenticated = false;
@@ -831,7 +854,6 @@ class AuthProvider extends ChangeNotifier {
         );
         await user.reauthenticateWithCredential(cred);
       }
-      await PushNotificationService.instance.clearTokenForUser(user.uid);
       await _firestore.collection(_usersCollection).doc(user.uid).delete();
       await user.delete();
 
@@ -867,7 +889,6 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = true;
     _isCheckingSession = false;
     await _loadAcademyMembers(profile.academyName);
-    unawaited(PushNotificationService.instance.registerTokenForUser(profile.id));
     notifyListeners();
   }
 }

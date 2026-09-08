@@ -62,6 +62,12 @@ class _MainLayoutState extends State<MainLayout> {
         notifProv.fetchNotifications(user.id);
         subProv.fetchUserSubscriptions(user.id, notificationProvider: notifProv);
 
+        // TEMPORARY — one-time backfill of existing academy names to
+        // Supabase. Remove this call once you've confirmed the names
+        // show up in the academy_names table on Supabase; it only needs
+        // to run once, ever.
+        authProv.backfillAcademyNamesToSupabaseOnce();
+
         // Covers a cold start where the app was launched by tapping a push
         // notification (the tap happened before this screen, and this
         // listener, existed).
