@@ -42,7 +42,9 @@ class CustomSidebar extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isAdmin ? AppColors.primary.withOpacity(0.1) : AppColors.accentOrange.withOpacity(0.1),
+              color: isAdmin
+                  ? AppColors.primary.withOpacity(0.1)
+                  : AppColors.accentOrange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -53,15 +55,21 @@ class CustomSidebar extends StatelessWidget {
                     Icon(
                       isAdmin ? Icons.admin_panel_settings : Icons.person,
                       size: 18,
-                      color: isAdmin ? AppColors.primary : AppColors.accentOrange,
+                      color: isAdmin
+                          ? AppColors.primary
+                          : AppColors.accentOrange,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isAdmin ? loc.translate('roleAdmin') : loc.translate('roleNormalUser'),
+                      isAdmin
+                          ? loc.translate('roleAdmin')
+                          : loc.translate('roleNormalUser'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isAdmin ? AppColors.primary : AppColors.accentOrange,
+                        color: isAdmin
+                            ? AppColors.primary
+                            : AppColors.accentOrange,
                       ),
                     ),
                   ],
@@ -81,12 +89,11 @@ class CustomSidebar extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
-
                 _buildNavItem(
                   context,
                   route: 'branches',
-                  icon: Icons.storefront_outlined,
-                  activeIcon: Icons.storefront,
+                  icon: Icons.location_city_outlined,
+                  activeIcon: Icons.location_city,
                   title: loc.translate('branchesAndGroups'),
                 ),
                 _buildNavItem(
@@ -113,7 +120,12 @@ class CustomSidebar extends StatelessWidget {
 
                 if (isAdmin) ...[
                   Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: 8,
+                    ),
                     child: Text(
                       loc.translate('administrationSection'),
                       style: const TextStyle(
@@ -181,7 +193,10 @@ class CustomSidebar extends StatelessWidget {
                   leading: const Icon(Icons.language, size: 20),
                   title: Text(loc.translate('language')),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -206,21 +221,36 @@ class CustomSidebar extends StatelessWidget {
                 ),
                 ListTile(
                   dense: true,
-                  leading: const Icon(Icons.logout, color: Colors.orange, size: 20),
+                  leading: const Icon(
+                    Icons.logout,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
                   title: Text(
                     loc.translate('logout'),
-                    style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   onTap: () => authProvider.logout(),
                 ),
                 ListTile(
                   dense: true,
-                  leading: const Icon(Icons.delete_forever, color: Colors.redAccent, size: 20),
+                  leading: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
                   title: Text(
                     loc.translate('deleteAccount'),
-                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  onTap: () => _showDeleteConfirmation(context, authProvider, loc),
+                  onTap: () =>
+                      _showDeleteConfirmation(context, authProvider, loc),
                 ),
               ],
             ),
@@ -241,14 +271,18 @@ class CustomSidebar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary.withOpacity(0.12) : Colors.transparent,
+        color: isSelected
+            ? AppColors.primary.withOpacity(0.12)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
         dense: true,
         leading: Icon(
           isSelected ? activeIcon : icon,
-          color: isSelected ? AppColors.primary : Theme.of(context).iconTheme.color,
+          color: isSelected
+              ? AppColors.primary
+              : Theme.of(context).iconTheme.color,
           size: 22,
         ),
         title: Text(
@@ -264,7 +298,11 @@ class CustomSidebar extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, AuthProvider authProvider, AppLocalizations loc) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    AuthProvider authProvider,
+    AppLocalizations loc,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(

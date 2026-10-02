@@ -26,9 +26,23 @@ class WorkspaceSwitcher extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withOpacity(0.14),
+            Colors.green.withOpacity(0.12),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -39,30 +53,7 @@ class WorkspaceSwitcher extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    academy.logoUrl,
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => Container(
-                      width: 44,
-                      height: 44,
-                      color: AppColors.primary,
-                      child: Center(
-                        child: Text(
-                          academy.name.isNotEmpty ? academy.name[0] : 'A',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                _AcademyLogo(url: academy.logoUrl, size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -82,7 +73,10 @@ class WorkspaceSwitcher extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(4),
@@ -104,7 +98,9 @@ class WorkspaceSwitcher extends StatelessWidget {
                                   : loc.translate('normalUser'),
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Theme.of(context).textTheme.bodySmall?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -168,8 +164,13 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _showCreateForm ? loc.translate('createAcademy') : loc.translate('switchWorkspace'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  _showCreateForm
+                      ? loc.translate('createAcademy')
+                      : loc.translate('switchWorkspace'),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -181,7 +182,8 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
             if (!_showCreateForm) ...[
               const SizedBox(height: 12),
               ...workspaceProvider.academies.map((acad) {
-                final isSelected = acad.id == workspaceProvider.selectedAcademy?.id;
+                final isSelected =
+                    acad.id == workspaceProvider.selectedAcademy?.id;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
@@ -190,36 +192,24 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                     ),
                   ),
                   child: ListTile(
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        acad.logoUrl,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => Container(
-                          width: 40,
-                          height: 40,
-                          color: AppColors.primary,
-                          child: Center(
-                            child: Text(
-                              acad.name[0],
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    leading: _AcademyLogo(url: acad.logoUrl, size: 40),
                     title: Text(
                       acad.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(acad.sport),
-                    trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
+                    trailing: isSelected
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                          )
+                        : null,
                     onTap: () {
                       workspaceProvider.switchWorkspace(acad);
                       Navigator.pop(context);
@@ -248,7 +238,9 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                         labelText: loc.translate('academyName'),
                         prefixIcon: const Icon(Icons.sports),
                       ),
-                      validator: (val) => val == null || val.isEmpty ? loc.translate('requiredField') : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? loc.translate('requiredField')
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -257,7 +249,9 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                         labelText: loc.translate('sport'),
                         prefixIcon: const Icon(Icons.sports_soccer),
                       ),
-                      validator: (val) => val == null || val.isEmpty ? loc.translate('requiredField') : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? loc.translate('requiredField')
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -289,7 +283,8 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                       children: [
                         Expanded(
                           child: TextButton(
-                            onPressed: () => setState(() => _showCreateForm = false),
+                            onPressed: () =>
+                                setState(() => _showCreateForm = false),
                             child: Text(loc.translate('cancel')),
                           ),
                         ),
@@ -316,9 +311,72 @@ class _WorkspaceModalContentState extends State<_WorkspaceModalContent> {
                   ],
                 ),
               ),
-            ]
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AcademyLogo extends StatelessWidget {
+  final String url;
+  final double size;
+
+  const _AcademyLogo({required this.url, required this.size});
+
+  bool get _hasValidUrl {
+    final uri = Uri.tryParse(url.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: _hasValidUrl
+          ? Image.network(
+              url,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, stack) => _fallback(),
+            )
+          : _fallback(),
+    );
+  }
+
+  Widget _fallback() {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, Colors.green],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.school,
+            color: Colors.white.withOpacity(0.9),
+            size: size * 0.62,
+          ),
+          Positioned(
+            right: size * 0.08,
+            bottom: size * 0.08,
+            child: Icon(
+              Icons.sports_soccer,
+              color: Colors.white,
+              size: size * 0.38,
+            ),
+          ),
+        ],
       ),
     );
   }

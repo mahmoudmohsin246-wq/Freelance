@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../providers/branch_provider.dart';
 import '../../providers/workspace_provider.dart';
@@ -18,9 +19,15 @@ class _BranchesScreenState extends State<BranchesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final academyId = Provider.of<WorkspaceProvider>(context, listen: false).selectedAcademy?.id;
+      final academyId = Provider.of<WorkspaceProvider>(
+        context,
+        listen: false,
+      ).selectedAcademy?.id;
       if (academyId != null) {
-        Provider.of<BranchProvider>(context, listen: false).fetchBranches(academyId);
+        Provider.of<BranchProvider>(
+          context,
+          listen: false,
+        ).fetchBranches(academyId);
       }
     });
   }
@@ -51,12 +58,17 @@ class _BranchesScreenState extends State<BranchesScreen> {
                   children: [
                     Text(
                       loc.translate('branchesAndGroups'),
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Manage facility branches for ${academy.name}',
-                      style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                   ],
                 ),
@@ -72,105 +84,132 @@ class _BranchesScreenState extends State<BranchesScreen> {
               child: branchProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : branchProvider.branches.isEmpty
-                      ? EmptyStateWidget(
-                          icon: Icons.storefront_outlined,
-                          title: loc.translate('noBranchesYet'),
-                          description: 'Start by creating your first academy branch location.',
-                          actionLabel: loc.translate('addBranch'),
-                          onAction: () => _showAddBranchModal(context, academy.id),
-                        )
-                      : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  ? EmptyStateWidget(
+                      icon: Icons.location_city_outlined,
+                      title: loc.translate('noBranchesYet'),
+                      description:
+                          'Start by creating your first academy branch location.',
+                      actionLabel: loc.translate('addBranch'),
+                      onAction: () => _showAddBranchModal(context, academy.id),
+                    )
+                  : GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
                             maxCrossAxisExtent: 400,
                             mainAxisExtent: 280,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                           ),
-                          itemCount: branchProvider.branches.length,
-                          itemBuilder: (context, index) {
-                            final branch = branchProvider.branches[index];
-                            return Card(
-                              clipBehavior: Clip.antiAlias,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                      itemCount: branchProvider.branches.length,
+                      itemBuilder: (context, index) {
+                        final branch = branchProvider.branches[index];
+                        return Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
                                 children: [
-                                  Stack(
-                                    children: [
-                                      Image.network(
-                                        branch.imageUrl,
-                                        height: 140,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (c, e, s) => Container(
-                                          height: 140,
-                                          color: AppColors.primary.withOpacity(0.2),
-                                          child: const Center(
-                                            child: Icon(Icons.business, size: 48, color: AppColors.primary),
-                                          ),
+                                  Image.network(
+                                    branch.imageUrl,
+                                    height: 140,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, e, s) => Container(
+                                      height: 140,
+                                      color: AppColors.primary.withOpacity(0.2),
+                                      child: Center(
+                                        child: SvgPicture.asset(
+                                          'assets/icons/academy_branch.svg',
+                                          width: 64,
+                                          height: 64,
                                         ),
                                       ),
-                                      Positioned(
-                                        right: 8,
-                                        top: 8,
-                                        child: IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.white),
-                                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                                          onPressed: () => branchProvider.deleteBranch(branch.id),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          branch.name,
-                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.location_on_outlined, size: 16, color: AppColors.primary),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                branch.address,
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color: Theme.of(context).textTheme.bodySmall?.color,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.phone_outlined, size: 16, color: AppColors.primary),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              branch.phone,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Theme.of(context).textTheme.bodySmall?.color,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                      ),
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: Colors.black45,
+                                      ),
+                                      onPressed: () => branchProvider
+                                          .deleteBranch(branch.id),
                                     ),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      branch.name,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on_outlined,
+                                          size: 16,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            branch.address,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall?.color,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.phone_outlined,
+                                          size: 16,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          branch.phone,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall?.color,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -205,25 +244,37 @@ class _BranchesScreenState extends State<BranchesScreen> {
               children: [
                 Text(
                   AppLocalizations.of(context).translate('addBranch'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Divider(),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Branch Name', prefixIcon: Icon(Icons.business)),
+                  decoration: const InputDecoration(
+                    labelText: 'Branch Name',
+                    prefixIcon: Icon(Icons.business),
+                  ),
                   validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: addressCtrl,
-                  decoration: const InputDecoration(labelText: 'Address', prefixIcon: Icon(Icons.location_on)),
+                  decoration: const InputDecoration(
+                    labelText: 'Address',
+                    prefixIcon: Icon(Icons.location_on),
+                  ),
                   validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: phoneCtrl,
-                  decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    prefixIcon: Icon(Icons.phone),
+                  ),
                   validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
@@ -241,7 +292,10 @@ class _BranchesScreenState extends State<BranchesScreen> {
                   child: ElevatedButton(
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
-                        await Provider.of<BranchProvider>(context, listen: false).addBranch(
+                        await Provider.of<BranchProvider>(
+                          context,
+                          listen: false,
+                        ).addBranch(
                           academyId: academyId,
                           name: nameCtrl.text,
                           address: addressCtrl.text,
